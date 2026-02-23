@@ -2,13 +2,11 @@
     "crons": [
         {
             "path": "/api/internal/outbox/process",
-            "schedule": "0 0 * * *",
-            "comment": "Process staged outbox events (daily on Hobby)"
+            "schedule": "0 0 * * *"
         },
         {
             "path": "/api/internal/channels/sync",
-            "schedule": "0 1 * * *",
-            "comment": "Incremental sync for all active Enterprise channel connections (daily on Hobby)"
+            "schedule": "0 1 * * *"
         }
     ]
 }
