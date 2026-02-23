@@ -1,0 +1,14 @@
+{
+    "crons": [
+        {
+            "path": "/api/internal/outbox/process",
+            "schedule": "* * * * *",
+            "comment": "Process staged outbox events (every minute)"
+        },
+        {
+            "path": "/api/internal/channels/sync",
+            "schedule": "*/15 * * * *",
+            "comment": "Incremental sync for all active Enterprise channel connections (every 15 min)"
+        }
+    ]
+}

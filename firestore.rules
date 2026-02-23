@@ -1,0 +1,147 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─────────────────────────────────────────────
+    // HELPERS
+    // ─────────────────────────────────────────────
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    /** The storeId associated with the calling user */
+    function getUserStoreId() {
+      return userDoc().storeId;
+    }
+
+    /** How many stores the user currently owns */
+    function getUserStoreCount() {
+      return userDoc().get("storeCount", 0);
+    }
+
+    /** Max stores allowed by the user's plan */
+    function maxStoresForPlan() {
+      let plan = userDoc().get("plan", "basic");
+      return plan == "enterprise" ? 20 : (plan == "pro" ? 5 : 1);
+    }
+
+    // ─────────────────────────────────────────────
+    // USERS
+    // ─────────────────────────────────────────────
+
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ─────────────────────────────────────────────
+    // STORES
+    // ─────────────────────────────────────────────
+
+    match /stores/{storeId} {
+      // Create: authenticated + within plan store limit
+      allow create: if request.auth != null
+        && request.resource.data.ownerId == request.auth.uid
+        && getUserStoreCount() < maxStoresForPlan();
+
+      // Read / Update: owner only
+      allow read, update: if request.auth != null
+        && resource.data.ownerId == request.auth.uid;
+
+      // Delete: owner only
+      allow delete: if request.auth != null
+        && resource.data.ownerId == request.auth.uid;
+    }
+
+    // ─────────────────────────────────────────────
+    // PRODUCTS (public read for storefronts)
+    // ─────────────────────────────────────────────
+
+    match /products/{productId} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.resource.data.storeId == getUserStoreId();
+      allow update, delete: if request.auth != null
+        && resource.data.storeId == getUserStoreId();
+    }
+
+    // ─────────────────────────────────────────────
+    // CATEGORIES (public read for storefronts)
+    // ─────────────────────────────────────────────
+
+    match /categories/{catId} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.resource.data.storeId == getUserStoreId();
+      allow update, delete: if request.auth != null
+        && resource.data.storeId == getUserStoreId();
+    }
+
+    // ─────────────────────────────────────────────
+    // LOCATIONS — owner only
+    // ─────────────────────────────────────────────
+
+    match /locations/{locId} {
+      allow read, update, delete: if request.auth != null
+        && resource.data.storeId == getUserStoreId();
+      allow create: if request.auth != null
+        && request.resource.data.storeId == getUserStoreId();
+    }
+
+    // ─────────────────────────────────────────────
+    // VEHICLES — owner only
+    // ─────────────────────────────────────────────
+
+    match /vehicles/{vehicleId} {
+      allow read, update, delete: if request.auth != null
+        && resource.data.storeId == getUserStoreId();
+      allow create: if request.auth != null
+        && request.resource.data.storeId == getUserStoreId();
+    }
+
+    // ─────────────────────────────────────────────
+    // DRIVERS — owner only
+    // ─────────────────────────────────────────────
+
+    match /drivers/{driverId} {
+      allow read, update, delete: if request.auth != null
+        && resource.data.storeId == getUserStoreId();
+      allow create: if request.auth != null
+        && request.resource.data.storeId == getUserStoreId();
+    }
+
+    // ─────────────────────────────────────────────
+    // SHIPPING ZONES — owner only
+    // ─────────────────────────────────────────────
+
+    match /shippingZones/{zoneId} {
+      allow read, update, delete: if request.auth != null
+        && resource.data.storeId == getUserStoreId();
+      allow create: if request.auth != null
+        && request.resource.data.storeId == getUserStoreId();
+    }
+
+    // ─────────────────────────────────────────────
+    // ORDERS (owner store only)
+    // ─────────────────────────────────────────────
+
+    match /orders/{orderId} {
+      allow read, write: if request.auth != null
+        && resource.data.storeId == getUserStoreId();
+      allow create: if request.auth != null
+        && request.resource.data.storeId == getUserStoreId();
+    }
+
+    // ─────────────────────────────────────────────
+    // SUBSCRIPTIONS — owner only
+    // ─────────────────────────────────────────────
+
+    match /subscriptions/{subId} {
+      allow read: if request.auth != null
+        && resource.data.ownerId == request.auth.uid;
+      // Writes handled server-side only (no client writes)
+      allow write: if false;
+    }
+  }
+}

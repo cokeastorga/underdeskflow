@@ -1,0 +1,94 @@
+
+import { NextResponse } from "next/server";
+import { stripe } from "@/lib/payments/stripe";
+import { mpPreference } from "@/lib/payments/mercadopago";
+import { webpay } from "@/lib/payments/transbank";
+import { Product } from "@/types";
+
+
+interface CheckoutBody {
+    items: (Product & { quantity: number })[];
+    orderId: string;
+    provider: "stripe" | "mercadopago" | "webpay";
+    storeId: string;
+}
+
+export async function POST(req: Request) {
+    try {
+        const body: CheckoutBody = await req.json();
+        const { items, orderId, provider, storeId } = body;
+
+        const successUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/${storeId}/checkout/success?order_id=${orderId}`;
+        const cancelUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/${storeId}/checkout/failure`;
+
+        if (provider === "stripe") {
+            const session = await stripe.checkout.sessions.create({
+                payment_method_types: ["card"],
+                line_items: items.map((item) => ({
+                    price_data: {
+                        currency: "usd",
+                        product_data: {
+                            name: item.name,
+                            images: [item.image],
+                        },
+                        unit_amount: Math.round(item.price * 100), // Stripe uses cents
+                    },
+                    quantity: item.quantity,
+                })),
+                mode: "payment",
+                success_url: successUrl,
+                cancel_url: cancelUrl,
+                metadata: {
+                    orderId: orderId, // Link payment to order
+                    storeId: storeId
+                }
+            });
+
+            return NextResponse.json({ url: session.url });
+        }
+
+        if (provider === "mercadopago") {
+            const preference = await mpPreference.create({
+                body: {
+                    items: items.map((item) => ({
+                        id: item.id,
+                        title: item.name,
+                        quantity: item.quantity,
+                        unit_price: item.price,
+                    })),
+                    back_urls: {
+                        success: successUrl,
+                        failure: cancelUrl,
+                        pending: cancelUrl
+                    },
+                    auto_return: "approved",
+                    external_reference: orderId, // Link payment to order
+                }
+            });
+
+            return NextResponse.json({ url: preference.init_point });
+        }
+
+        if (provider === "webpay") {
+            const buyOrder = "O-" + Math.floor(Math.random() * 10000) + 1;
+            const sessionId = "S-" + Math.floor(Math.random() * 10000) + 1;
+            const amount = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+
+            // Transbank integration
+            const response = await webpay.create(
+                buyOrder,
+                sessionId,
+                amount,
+                successUrl
+            );
+
+            return NextResponse.json({ url: response.url, token: response.token });
+        }
+
+        return NextResponse.json({ error: "Invalid provider" }, { status: 400 });
+
+    } catch (error: any) {
+        console.error("Checkout Error:", error);
+        return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+    }
+}
