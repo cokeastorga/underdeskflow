@@ -2,13 +2,13 @@
     "crons": [
         {
             "path": "/api/internal/outbox/process",
-            "schedule": "* * * * *",
-            "comment": "Process staged outbox events (every minute)"
+            "schedule": "0 0 * * *",
+            "comment": "Process staged outbox events (daily on Hobby)"
         },
         {
             "path": "/api/internal/channels/sync",
-            "schedule": "*/15 * * * *",
-            "comment": "Incremental sync for all active Enterprise channel connections (every 15 min)"
+            "schedule": "0 1 * * *",
+            "comment": "Incremental sync for all active Enterprise channel connections (daily on Hobby)"
         }
     ]
 }
