@@ -256,7 +256,7 @@ export class PedidosYaAdapter implements ChannelAdapter {
     }
 
     getWebhookUrl(storeId: string): string {
-        const base = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.dpapp.cl";
+        const base = process.env.NEXT_PUBLIC_APP_URL ?? "https://underdeskflow.vercel.app";
         return `${base}/api/webhooks/channels/pedidosya/${storeId}`;
     }
 }

@@ -19,7 +19,7 @@ import { v4 as uuidv4 } from "uuid";
 
 export const runtime = "nodejs";
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.dpapp.cl";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://underdeskflow.vercel.app";
 
 const OAUTH_CONFIGS: Record<string, {
     authUrl: (params: Record<string, string>) => string;

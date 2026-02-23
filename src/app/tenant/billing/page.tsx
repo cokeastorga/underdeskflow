@@ -341,7 +341,7 @@ export default function BillingPage() {
 
             <p className="text-xs text-center text-muted-foreground pt-2">
                 Los cambios de plan se aplican inmediatamente. Para facturación empresarial o pagos anuales,{" "}
-                <a href="mailto:ventas@dpapp.cl" className="underline">contáctanos</a>.
+                <a href="mailto:ventas@underdeskflow.com" className="underline">contáctanos</a>.
             </p>
         </div>
     );

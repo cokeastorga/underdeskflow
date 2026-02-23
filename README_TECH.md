@@ -1,4 +1,4 @@
-# DPapp - Documentación Técnica
+# UnderDesk Flow (UDF) - Documentación Técnica
 
 > [!IMPORTANT]
 > **[Ver Especificación Técnica e Intelectual (ISO 12207 + Ley 17.336)](./MASTER_DOCUMENTATION.md)**
@@ -6,11 +6,11 @@
 > [!NOTE]
 > **[Ver Presentación del Proyecto (Visión General)](./PRESENTATION.md)**
 
-Bienvenido a la documentación técnica de **DPapp**, una plataforma de comercio electrónico multi-tienda de alto rendimiento.
+Bienvenido a la documentación técnica de **UnderDesk Flow**, una plataforma de comercio electrónico multi-tienda de alto rendimiento.
 
 ## Arquitectura General
 
-DPapp está construido sobre **Next.js 14** (App Router) y **Firebase**, utilizando una arquitectura de microservicios lógica dentro de un monolito modular.
+UnderDesk Flow está construido sobre **Next.js 14** (App Router) y **Firebase**, utilizando una arquitectura de microservicios lógica dentro de un monolito modular.
 
 ### Módulos Principales
 

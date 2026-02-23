@@ -67,7 +67,7 @@ function tnHeaders(credentials: ChannelCredentials): Record<string, string> {
     return {
         Authentication: `bearer ${credentials.accessToken}`,
         "Content-Type": "application/json",
-        "User-Agent": "DPapp/1.0 (dpapp.cl)",
+        "User-Agent": "UnderDeskFlow/1.0 (underdeskflow.vercel.app)",
     };
 }
 
@@ -239,7 +239,7 @@ export class TiendanubeAdapter implements ChannelAdapter {
     }
 
     getWebhookUrl(storeId: string): string {
-        const base = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.dpapp.cl";
+        const base = process.env.NEXT_PUBLIC_APP_URL ?? "https://underdeskflow.vercel.app";
         return `${base}/api/webhooks/channels/tiendanube/${storeId}`;
     }
 }

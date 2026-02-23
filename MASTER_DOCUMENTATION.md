@@ -1,10 +1,10 @@
-# 📕 Especificación de Software y Propiedad Intelectual - DPapp
+# 📕 Especificación de Software y Propiedad Intelectual - UnderDesk Flow (UDF)
 
 ## 1. Declaración de Propiedad Intelectual (Ley 17.336)
 
 De acuerdo con la **Ley N° 17.336 sobre Propiedad Intelectual** de la República de Chile, este documento y el código fuente asociado constituyen una obra protegida.
 
-- **Autoría**: El sistema DPapp ha sido desarrollado como una obra de software original.
+- **Autoría**: El sistema UnderDesk Flow ha sido desarrollado como una obra de software original.
 - **Protección**: La protección abarca el código fuente, código objeto, documentación técnica, manuales de uso y diagramas de arquitectura.
 - **Derechos**: Se reserva el derecho exclusivo de reproducción, adaptación y distribución. Queda prohibida la ingeniería inversa o descompilación no autorizada.
 
@@ -84,4 +84,4 @@ Este proyecto sigue los lineamientos del estándar **ISO/IEC 12207** para asegur
 - **Resiliencia**: `ChaosSimulationService` permite inyectar latencia y errores 500 para validar el comportamiento del sistema bajo estrés.
 
 ---
-*Este documento es el activo principal de conocimiento técnico y legal de DPapp.*
+*Este documento es el activo principal de conocimiento técnico y legal de UnderDesk Flow.*
