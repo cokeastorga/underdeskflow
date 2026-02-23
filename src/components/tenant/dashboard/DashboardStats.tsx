@@ -20,7 +20,10 @@ export function DashboardStats() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!storeId) return;
+        if (!storeId) {
+            setLoading(false);
+            return;
+        }
 
         // 1. Orders & Revenue (Real-time)
         const ordersQuery = query(collection(db, "orders"), where("storeId", "==", storeId));

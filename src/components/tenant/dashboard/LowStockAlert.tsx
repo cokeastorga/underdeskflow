@@ -18,7 +18,10 @@ export function LowStockAlert() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!storeId) return;
+        if (!storeId) {
+            setLoading(false);
+            return;
+        }
 
         // Note: Ideally we should filter this on the server/query side, 
         // but 'stock <= threshold' comparison where threshold is a field on the doc is hard in Firestore.

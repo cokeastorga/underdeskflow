@@ -19,7 +19,10 @@ export function RecentOrders() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!storeId) return;
+        if (!storeId) {
+            setLoading(false);
+            return;
+        }
 
         const q = query(
             collection(db, "orders"),
