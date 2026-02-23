@@ -1,6 +1,7 @@
 {
   "name": "underdesk-flow",
   "version": "0.1.0",
+  "description": "UnderDesk Flow Platform",
   "private": true,
   "scripts": {
     "dev": "next dev",
