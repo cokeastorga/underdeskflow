@@ -32,19 +32,41 @@ const STEPS = [
 
 export function UniversalWizard({ store: initialStore }: { store: Store }) {
     const { storeId } = useAuth();
-    const [currentStepIdx, setCurrentStepIdx] = useState(0);
+    const [currentStepIdx, setCurrentStepIdx] = useState(() => {
+        // If onboardingStatus is a number, use it as the starting step index
+        if (typeof initialStore.onboardingStatus === 'number') {
+            return Math.min(initialStore.onboardingStatus, STEPS.length - 1);
+        }
+        return 0;
+    });
     const [store, setStore] = useState<Store>(initialStore);
     const [loading, setLoading] = useState(false);
 
     const currentStep = STEPS[currentStepIdx];
 
     const handleNext = async (data?: Partial<Store>) => {
-        if (data && storeId) {
+        if (storeId) {
             setLoading(true);
             try {
-                await updateDoc(doc(db, "stores", storeId), data);
+                const nextStepIdx = Math.min(currentStepIdx + 1, STEPS.length - 1);
+                const isFinalStep = currentStepIdx === STEPS.length - 1;
+
+                const updateData: any = {
+                    ...data,
+                    // If we're moving forward, update the milestone unless already completed
+                    onboardingStatus: isFinalStep ? "completed" : nextStepIdx
+                };
+
+                await updateDoc(doc(db, "stores", storeId), updateData);
                 // Update local state to keep consistency across steps
-                setStore(prev => ({ ...prev, ...data } as Store));
+                setStore(prev => ({ ...prev, ...updateData } as Store));
+
+                if (isFinalStep) {
+                    handleComplete();
+                } else {
+                    setCurrentStepIdx(nextStepIdx);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                }
             } catch (error) {
                 console.error("Error saving step:", error);
                 toast.error("Error al guardar el progreso.");
@@ -52,13 +74,6 @@ export function UniversalWizard({ store: initialStore }: { store: Store }) {
             } finally {
                 setLoading(false);
             }
-        }
-
-        if (currentStepIdx < STEPS.length - 1) {
-            setCurrentStepIdx(currentStepIdx + 1);
-            window.scrollTo({ top: 0, behavior: "smooth" });
-        } else {
-            handleComplete();
         }
     };
 

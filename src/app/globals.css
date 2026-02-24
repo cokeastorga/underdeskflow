@@ -157,4 +157,12 @@
   .text-gradient-gold {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-600;
   }
+
+  .card-enterprise {
+    @apply bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-2xl rounded-3xl;
+  }
+
+  .btn-accent {
+    @apply bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold transition-all shadow-lg shadow-amber-200 dark:shadow-none;
+  }
 }

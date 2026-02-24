@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { db } from "@/lib/firebase/config";
-import { collection, addDoc, doc, updateDoc, setDoc } from "firebase/firestore";
+import { collection, addDoc, doc, updateDoc, setDoc, query, where, getDocs } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,43 +22,55 @@ export function CreateStoreForm() {
 
         setLoading(true);
         try {
-            // 1. Create store document
-            const storeRef = await addDoc(collection(db, "stores"), {
-                name: name.trim(),
-                ownerId: user.uid,
-                createdAt: Date.now(),
-                currency: "CLP",
-                onboardingStatus: 0,
-                fulfillment: { pickup: true, delivery: false },
-                design: {
-                    template: "modern",
-                    gridColumns: 4,
-                    cardStyle: {
-                        showSubtitle: true,
-                        showPrice: true,
-                        priceSize: "md",
-                        shadow: "sm",
-                        border: true,
-                        hoverEffect: "lift",
-                        buttonStyle: "solid"
-                    }
-                },
-                compliance_status: "pending"
-            });
+            // Check if store already exists for this user to prevent duplicates on reload
+            const q = query(collection(db, "stores"), where("ownerId", "==", user.uid));
+            const querySnapshot = await getDocs(q);
+
+            let storeId;
+
+            if (!querySnapshot.empty) {
+                // Reuse the first existing store found
+                storeId = querySnapshot.docs[0].id;
+                console.log("Reusing existing store:", storeId);
+            } else {
+                // 1. Create store document if none exists
+                const storeRef = await addDoc(collection(db, "stores"), {
+                    name: name.trim(),
+                    ownerId: user.uid,
+                    createdAt: Date.now(),
+                    currency: "CLP",
+                    onboardingStatus: 0,
+                    fulfillment: { pickup: true, delivery: false },
+                    design: {
+                        template: "modern",
+                        gridColumns: 4,
+                        cardStyle: {
+                            showSubtitle: true,
+                            showPrice: true,
+                            priceSize: "md",
+                            shadow: "sm",
+                            border: true,
+                            hoverEffect: "lift",
+                            buttonStyle: "solid"
+                        }
+                    },
+                    compliance_status: "pending"
+                });
+                storeId = storeRef.id;
+            }
 
             // 2. Update user profile with storeId
-            // Using setDoc with merge: true to ensure the user document exists (defensive for Google Auth)
             await setDoc(doc(db, "users", user.uid), {
-                storeId: storeRef.id,
+                storeId: storeId,
                 storeCount: 1
             }, { merge: true });
 
-            toast.success("¡Tienda creada exitosamente!");
+            toast.success("¡Tienda configurada exitosamente!");
             // Refresh to trigger AuthContext update and show the wizard
             window.location.reload();
         } catch (error) {
             console.error("Error creating store:", error);
-            toast.error("Error al crear la tienda. Intenta nuevamente.");
+            toast.error("Error al configurar la tienda. Intenta nuevamente.");
         } finally {
             setLoading(false);
         }
