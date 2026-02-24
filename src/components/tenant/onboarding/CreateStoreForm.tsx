@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { db } from "@/lib/firebase/config";
-import { collection, addDoc, doc, updateDoc } from "firebase/firestore";
+import { collection, addDoc, doc, updateDoc, setDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -47,10 +47,11 @@ export function CreateStoreForm() {
             });
 
             // 2. Update user profile with storeId
-            await updateDoc(doc(db, "users", user.uid), {
+            // Using setDoc with merge: true to ensure the user document exists (defensive for Google Auth)
+            await setDoc(doc(db, "users", user.uid), {
                 storeId: storeRef.id,
                 storeCount: 1
-            });
+            }, { merge: true });
 
             toast.success("¡Tienda creada exitosamente!");
             // Refresh to trigger AuthContext update and show the wizard

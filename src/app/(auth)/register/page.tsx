@@ -93,11 +93,13 @@ export default function RegisterPage() {
                 body: JSON.stringify({ idToken }),
             });
 
-            // Check if user doc exists, if not create it
-            // Logic handled in onboarding or subsequent checks usually, 
-            // but for registration flow we can assume basic setup if new.
-            // For Google Auth, we might miss phone/company initially.
-            // We can redirect to a specific "complete profile" step in onboarding.
+            // Ensure user document exists
+            await setDoc(doc(db, "users", user.uid), {
+                email: user.email,
+                createdAt: Date.now(),
+                role: "owner",
+                onboardingComplete: false
+            }, { merge: true });
 
             router.push("/tenant/onboarding");
         } catch (error: any) {

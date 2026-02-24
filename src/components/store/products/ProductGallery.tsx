@@ -48,6 +48,7 @@ export function ProductGallery({ product }: ProductGalleryProps) {
                                 alt={`${product.name} view ${idx + 1}`}
                                 fill
                                 className="object-cover"
+                                sizes="80px"
                             />
                         </button>
                     ))}
@@ -62,6 +63,7 @@ export function ProductGallery({ product }: ProductGalleryProps) {
                     fill
                     className="object-cover"
                     priority
+                    sizes="(max-width: 1024px) 100vw, 50vw"
                 />
             </div>
         </div>

@@ -10,7 +10,6 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from 
 import { auth, db } from "@/lib/firebase/config";
 import { signOut } from "firebase/auth";
 import { doc, onSnapshot } from "firebase/firestore";
-import { OnboardingOrchestrator } from "./onboarding/OnboardingOrchestrator";
 import { OnboardingProgress } from "./onboarding/OnboardingProgress";
 import { KeyboardShortcutsModal } from "./shell/KeyboardShortcutsModal";
 import { GuideProvider } from "./guides/GuideContext";
@@ -35,6 +34,7 @@ export function TenantShell({
 }) {
     const { user, storeId } = useAuth();
     const router = useRouter();
+    const pathname = usePathname();
     const [store, setStore] = useState<any>(null);
     const [open, setOpen] = useState(false);
     const [showShortcuts, setShowShortcuts] = useState(false);
@@ -203,6 +203,23 @@ export function TenantShell({
         </div>
     );
 
+    const isOnboarding = pathname === "/tenant/onboarding";
+
+    if (isOnboarding) {
+        return (
+            <GuideProvider>
+                <div className="bg-gray-50 dark:bg-black min-h-screen">
+                    <main className="flex-1 overflow-x-hidden">
+                        <div className="p-0 min-h-screen">
+                            {children}
+                        </div>
+                    </main>
+                    <KeyboardShortcutsModal open={showShortcuts} onOpenChange={setShowShortcuts} />
+                </div>
+            </GuideProvider>
+        );
+    }
+
     return (
         <GuideProvider>
             <div className="flex bg-gray-50 dark:bg-black min-h-screen">
@@ -317,10 +334,7 @@ export function TenantShell({
 
                 <KeyboardShortcutsModal open={showShortcuts} onOpenChange={setShowShortcuts} />
 
-                {/* Onboarding Orchestrator */}
-                {store && store.onboardingStatus !== "completed" && store.onboardingStatus !== undefined && (
-                    <OnboardingOrchestrator store={store} />
-                )}
+                {/* Onboarding Orchestrator Removed - Using UniversalWizard page */}
             </div>
         </GuideProvider>
     );

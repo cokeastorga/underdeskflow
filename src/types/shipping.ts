@@ -81,6 +81,7 @@ export interface CarrierMeta {
     name: string;
     description: string;
     color: string;
+    defaultSla: string;
     fields: { key: string; label: string; placeholder: string; secret?: boolean }[];
 }
 
@@ -90,6 +91,7 @@ export const CARRIER_META: CarrierMeta[] = [
         name: "Blue Express",
         description: "Cobertura nacional. Integración vía API REST.",
         color: "#003087",
+        defaultSla: "24-48h",
         fields: [
             { key: "apiKey", label: "API Key", placeholder: "BEX-XXXX-...", secret: true },
             { key: "accountCode", label: "Código de Cuenta", placeholder: "BEX-12345" },
@@ -100,6 +102,7 @@ export const CARRIER_META: CarrierMeta[] = [
         name: "Starken",
         description: "Envíos nacionales e internacionales.",
         color: "#E30613",
+        defaultSla: "3-5 días",
         fields: [
             { key: "apiKey", label: "API Key", placeholder: "sk_live_...", secret: true },
             { key: "contractNumber", label: "N° de Contrato", placeholder: "CL-00123" },
@@ -110,6 +113,7 @@ export const CARRIER_META: CarrierMeta[] = [
         name: "Chile Express",
         description: "Red de sucursales en todo Chile.",
         color: "#FF6200",
+        defaultSla: "24h",
         fields: [
             { key: "apiKey", label: "API Key", placeholder: "cx_...", secret: true },
             { key: "clientNumber", label: "N° de Cliente", placeholder: "12345678" },
@@ -120,6 +124,7 @@ export const CARRIER_META: CarrierMeta[] = [
         name: "Flota Propia",
         description: "Gestiona tus propios vehículos y conductores.",
         color: "#16a34a",
+        defaultSla: "Mismo día",
         fields: [],
     },
 ];

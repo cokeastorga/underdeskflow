@@ -37,6 +37,7 @@ export function ProductCard({ product, template = "modern" }: ProductCardProps) 
                             alt={product.name}
                             fill
                             className="object-cover transition-transform duration-700 group-hover:scale-105"
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                         />
                     ) : (
                         <div className="flex h-full w-full items-center justify-center bg-gray-50 text-gray-300">
@@ -81,6 +82,7 @@ export function ProductCard({ product, template = "modern" }: ProductCardProps) 
                             alt={product.name}
                             fill
                             className="object-cover mix-blend-multiply filter grayscale group-hover:grayscale-0 transition-all duration-300"
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                         />
                     )}
                     {!product.image && (
@@ -136,6 +138,7 @@ export function ProductCard({ product, template = "modern" }: ProductCardProps) 
                                 "object-cover transition-transform duration-700 ease-out group-hover:scale-110",
                                 product.media && product.media.length > 1 ? "group-hover:opacity-0" : ""
                             )}
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                         />
                         {/* Secondary Hover Image */}
                         {product.media && product.media.length > 1 && (
@@ -144,6 +147,7 @@ export function ProductCard({ product, template = "modern" }: ProductCardProps) 
                                 alt={product.name}
                                 fill
                                 className="object-cover absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 ease-out scale-110"
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                             />
                         )}
                     </>

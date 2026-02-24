@@ -28,8 +28,11 @@ export interface Store {
     logo?: string;
     favicon?: string; // New
     ownerId: string;
+    legalName?: string; // New: Official company name
+    taxId?: string; // New: RUT/Tax ID
     createdAt: number;
     currency: string;
+    customDomain?: string; // New
 
     // Contact Info (New)
     contactEmail?: string;

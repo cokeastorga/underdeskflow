@@ -33,14 +33,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 try {
                     const idToken = await user.getIdToken();
 
-                    // Sync session with server
-                    await fetch("/api/auth/login", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({ idToken }),
-                    });
+                    // Sync session with server with timeout
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+                    try {
+                        const syncRes = await fetch("/api/auth/login", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({ idToken }),
+                            signal: controller.signal
+                        });
+                        clearTimeout(timeoutId);
+
+                        if (!syncRes.ok) {
+                            console.warn("Session sync returned not ok, continuing anyway...");
+                        }
+                    } catch (err) {
+                        clearTimeout(timeoutId);
+                        console.error("Session sync failed or timed out:", err);
+                        // We don't force logout here to avoid infinite loops if the API is down
+                        // The user will just have a client-side session for now
+                    }
 
                     // Fetch user profile
                     const userDoc = await getDoc(doc(db, "users", user.uid));

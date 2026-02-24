@@ -86,6 +86,7 @@ export function HeroCarousel({ storeId, slides = [], template = "modern" }: { st
                                 fill
                                 className="object-cover"
                                 priority={index === 0}
+                                sizes="100vw"
                             />
                         </div>
 

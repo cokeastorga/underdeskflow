@@ -49,7 +49,15 @@ export default function AdminLoginPage() {
     const handleGoogleLogin = async () => {
         setIsLoggingIn(true);
         try {
-            await signInWithPopup(auth, googleProvider);
+            const result = await signInWithPopup(auth, googleProvider);
+            const user = result.user;
+
+            // Ensure user document exists (defensive for new Google users)
+            await setDoc(doc(db, "users", user.uid), {
+                email: user.email,
+                lastLogin: Date.now(),
+            }, { merge: true });
+
             // AuthContext handles the rest
         } catch (error: any) {
             console.error("Login error:", error);

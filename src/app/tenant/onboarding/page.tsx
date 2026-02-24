@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/firebase/auth-context";
 import { db } from "@/lib/firebase/config";
 import { doc, getDoc } from "firebase/firestore";
 import { Store } from "@/types/store";
-import { StoreSetupWizard } from "@/components/tenant/onboarding/store-setup-wizard";
+import { UniversalWizard } from "@/components/tenant/onboarding/UniversalWizard";
 import { CreateStoreForm } from "@/components/tenant/onboarding/CreateStoreForm";
 import { Loader2 } from "lucide-react";
 
@@ -36,5 +36,5 @@ export default function OnboardingPage() {
         return <CreateStoreForm />;
     }
 
-    return <StoreSetupWizard store={store} />;
+    return <UniversalWizard store={store} />;
 }
