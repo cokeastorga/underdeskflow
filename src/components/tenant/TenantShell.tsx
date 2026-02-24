@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, Package, Settings, LogOut, Store, ShoppingCart, Users, Megaphone, MapPin, ClipboardList, Menu, Palette, Truck, CreditCard, BarChart2, LayoutGrid, Globe, TrendingUp, Bell, Activity, AlertCircle } from "lucide-react";
+import { LayoutDashboard, Package, Settings, LogOut, Store, ShoppingCart, Users, Megaphone, MapPin, ClipboardList, Menu, Palette, Truck, CreditCard, BarChart2, LayoutGrid, Globe, TrendingUp, Bell, Activity, AlertCircle, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { auth, db } from "@/lib/firebase/config";
@@ -23,9 +23,7 @@ import {
     CommandItem,
     CommandList,
     CommandSeparator,
-    CommandShortcut
 } from "@/components/ui/command";
-import { Search } from "lucide-react";
 
 export function TenantShell({
     children,
@@ -55,7 +53,7 @@ export function TenantShell({
                 }
             };
             fetchConflictCount();
-            const interval = setInterval(fetchConflictCount, 60000); // Check every minute
+            const interval = setInterval(fetchConflictCount, 60000);
             return () => clearInterval(interval);
         }
     }, [storeId, user]);
@@ -84,9 +82,21 @@ export function TenantShell({
         }
     }, [storeId]);
 
-    // Redirection is handled by Middleware and Server Components
-    if (!user && !storeId) {
-        // Optional loading state
+    const isOnboarding = pathname === "/tenant/onboarding";
+
+    if (isOnboarding) {
+        return (
+            <GuideProvider>
+                <div className="bg-gray-50 dark:bg-black min-h-screen">
+                    <main className="flex-1 overflow-x-hidden">
+                        <div className="p-0 min-h-screen">
+                            {children}
+                        </div>
+                    </main>
+                    <KeyboardShortcutsModal open={showShortcuts} onOpenChange={setShowShortcuts} />
+                </div>
+            </GuideProvider>
+        );
     }
 
     const SidebarContent = () => (
@@ -109,44 +119,40 @@ export function TenantShell({
             <nav className="mt-2 px-4 space-y-1 flex-1 overflow-y-auto">
                 {/* Onboarding Progress Widget */}
                 {store && store.onboardingStatus !== "completed" && (
-                    <OnboardingProgress store={store} />
+                    <div className="mb-6">
+                        <OnboardingProgress store={store} />
+                    </div>
                 )}
 
-                <NavLink href="/tenant" icon={LayoutDashboard}>Dashboard</NavLink>
-
-                <div className="pt-4 pb-2">
+                <div className="pb-2">
                     <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                        Tienda
+                        Panel Principal
                     </p>
                 </div>
-                <NavLink href="/tenant/design" icon={Palette}>Diseño</NavLink>
-                <NavLink href="/tenant/categories" icon={LayoutGrid}>Categorías</NavLink>
+                <NavLink href="/tenant" icon={LayoutDashboard}>Escritorio</NavLink>
                 <NavLink href="/tenant/products" icon={Package}>
-                    <span className="flex items-center gap-2">
+                    <span className="flex items-center gap-2 w-full">
                         Productos
                         {conflictCount > 0 && (
-                            <span className="bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full animate-pulse">
+                            <span className="ml-auto bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full animate-pulse">
                                 {conflictCount}
                             </span>
                         )}
                     </span>
                 </NavLink>
-                {conflictCount > 0 && (
-                    <NavLink href="/tenant/products/conflicts" icon={AlertCircle}>
-                        <span className="text-orange-500 dark:text-orange-400 font-bold">
-                            Bandeja de Conflictos
-                        </span>
-                    </NavLink>
-                )}
                 <NavLink href="/tenant/inventory" icon={ClipboardList}>Inventario</NavLink>
-                <NavLink href="/tenant/inventory/alerts" icon={Bell}>Alertas de stock</NavLink>
-                <NavLink href="/tenant/orders" icon={ShoppingCart}>Pedidos</NavLink>
-                <NavLink href="/tenant/shipping" icon={Truck}>Envíos</NavLink>
-                <NavLink href="/tenant/customers" icon={Users}>Clientes / CRM</NavLink>
-                <NavLink href="/tenant/marketing" icon={Megaphone}>Marketing</NavLink>
-                {/* Enterprise-only: Canales externos */}
-                <NavLink href="/tenant/channels" icon={Globe}>
-                    <span className="flex items-center gap-1.5">
+                <NavLink href="/tenant/orders" icon={ShoppingCart}>Órdenes</NavLink>
+                <NavLink href="/tenant/customers" icon={Users}>Clientes</NavLink>
+
+                <div className="pt-4 pb-2">
+                    <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        Canales & Marketing
+                    </p>
+                </div>
+                <NavLink href="/tenant/channels" icon={Globe}>Mis canales</NavLink>
+                <NavLink href="/tenant/marketing" icon={Megaphone}>Campañas</NavLink>
+                <NavLink href="/tenant/channels/status" icon={Activity}>
+                    <span className="flex items-center w-full">
                         Canales externos
                         {(store as any)?.plan !== "enterprise" && (
                             <span className="ml-auto text-[9px] font-bold uppercase tracking-wide bg-violet-500/20 text-violet-400 border border-violet-500/30 px-1 py-0.5 rounded">
@@ -155,11 +161,6 @@ export function TenantShell({
                         )}
                     </span>
                 </NavLink>
-                {(store as any)?.plan === "enterprise" && (
-                    <NavLink href="/tenant/channels/status" icon={Activity}>
-                        Estado del sistema
-                    </NavLink>
-                )}
 
                 <div className="pt-4 pb-2">
                     <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -202,23 +203,6 @@ export function TenantShell({
             </div>
         </div>
     );
-
-    const isOnboarding = pathname === "/tenant/onboarding";
-
-    if (isOnboarding) {
-        return (
-            <GuideProvider>
-                <div className="bg-gray-50 dark:bg-black min-h-screen">
-                    <main className="flex-1 overflow-x-hidden">
-                        <div className="p-0 min-h-screen">
-                            {children}
-                        </div>
-                    </main>
-                    <KeyboardShortcutsModal open={showShortcuts} onOpenChange={setShowShortcuts} />
-                </div>
-            </GuideProvider>
-        );
-    }
 
     return (
         <GuideProvider>
@@ -333,8 +317,6 @@ export function TenantShell({
                 </CommandDialog>
 
                 <KeyboardShortcutsModal open={showShortcuts} onOpenChange={setShowShortcuts} />
-
-                {/* Onboarding Orchestrator Removed - Using UniversalWizard page */}
             </div>
         </GuideProvider>
     );

@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Store } from "@/types/store";
 import { Loader2, Save } from "lucide-react";
 import { StoreProfileForm } from "@/components/tenant/settings/StoreProfileForm";
-import { StepOperations } from "@/components/tenant/onboarding/StepOperations";
+import { LogisticsStep } from "@/components/tenant/onboarding/wizard-steps/LogisticsStep";
 import { FloatingGuide } from "@/components/tenant/guides/FloatingGuide";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -113,7 +113,10 @@ export default function SettingsPage() {
                             <CardDescription>Configura cómo entregas tus productos.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <StepOperations store={config as Store} onComplete={() => window.location.reload()} loading={loading} />
+                            <LogisticsStep store={config as Store} onNext={(data) => {
+                                setConfig(prev => ({ ...prev!, ...data }));
+                                toast.success("Configuración de logística actualizada localmente. Guarde los cambios para persistir.");
+                            }} />
                         </CardContent>
                     </Card>
                 </TabsContent>
