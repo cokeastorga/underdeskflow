@@ -10,8 +10,12 @@ export async function POST() {
         try {
             const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie);
             await adminAuth.revokeRefreshTokens(decodedClaims.uid);
-        } catch (error) {
-            console.error("Error revoking refresh tokens:", error);
+        } catch (error: any) {
+            // If the user record was already deleted, revokeRefreshTokens will fail.
+            // We can safely ignore this error as we are clearing the session cookie anyway.
+            if (error.code !== "auth/user-not-found") {
+                console.error("Error revoking refresh tokens:", error);
+            }
         }
     }
 

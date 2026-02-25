@@ -39,8 +39,9 @@ export function CatalogStep({ store, onNext }: CatalogStepProps) {
 
     const onSubmit = async (data: CatalogFormValues) => {
         try {
-            // 1. Create Category
-            const categoryRef = await addDoc(collection(db, "stores", store.id, "categories"), {
+            // 1. Create Category in Root Collection
+            const categoryRef = await addDoc(collection(db, "categories"), {
+                storeId: store.id,
                 name: data.categoryName,
                 slug: data.categoryName.toLowerCase().replace(/ /g, "-"),
                 description: "Categoría inicial",
@@ -49,8 +50,9 @@ export function CatalogStep({ store, onNext }: CatalogStepProps) {
                 updatedAt: serverTimestamp(),
             });
 
-            // 2. Create Product
-            await addDoc(collection(db, "stores", store.id, "products"), {
+            // 2. Create Product in Root Collection
+            await addDoc(collection(db, "products"), {
+                storeId: store.id,
                 name: data.productName,
                 slug: data.productName.toLowerCase().replace(/ /g, "-"),
                 price: data.price,
@@ -62,7 +64,8 @@ export function CatalogStep({ store, onNext }: CatalogStepProps) {
                 mainImage: data.productImage,
                 images: data.productImage ? [data.productImage] : [],
                 status: "active",
-                stock: 10,
+                stock: 0, // No stock by default as requested
+                trackStock: false,
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp(),
             });
@@ -159,6 +162,7 @@ export function CatalogStep({ store, onNext }: CatalogStepProps) {
                                                 className="h-12 pl-10"
                                                 value={field.value}
                                                 onChange={(e) => field.onChange(Number(e.target.value))}
+                                                onFocus={(e) => e.target.select()}
                                             />
                                         </FormControl>
                                     </div>
@@ -172,7 +176,7 @@ export function CatalogStep({ store, onNext }: CatalogStepProps) {
                 <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-xl flex items-start gap-3 border border-blue-100 dark:border-blue-900/30">
                     <Package className="h-5 w-5 text-blue-600 mt-0.5" />
                     <p className="text-xs text-blue-800 dark:text-blue-300">
-                        Podrás agregar más productos, variantes y stock detallado en el **Panel de Productos** después de terminar.
+                        Podrás agregar más productos, variantes e imágenes detalladas en el **Panel de Productos** después de terminar.
                     </p>
                 </div>
             </form>

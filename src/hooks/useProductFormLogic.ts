@@ -27,6 +27,9 @@ export function useProductFormLogic({ initialData }: UseProductFormLogicProps) {
             ...initialData,
             price: initialData.price || 0,
             stock: initialData.stock || 0,
+            sku: initialData.sku || "",
+            barcode: initialData.barcode || "",
+            description: initialData.description || "",
             vendor: initialData.vendor || "",
             category: initialData.category || "",
             brand: initialData.brand || "",
@@ -34,6 +37,7 @@ export function useProductFormLogic({ initialData }: UseProductFormLogicProps) {
             origin: initialData.origin || "",
             warranty: initialData.warranty || "",
             careInstructions: initialData.careInstructions || "",
+            lowStockThreshold: initialData.lowStockThreshold || 0,
             dimensions: {
                 length: initialData.dimensions?.length || 0,
                 width: initialData.dimensions?.width || 0,
@@ -43,6 +47,8 @@ export function useProductFormLogic({ initialData }: UseProductFormLogicProps) {
             title: "",
             slug: "",
             description: "",
+            sku: "",
+            barcode: "",
             status: "active",
             price: 0,
             compareAtPrice: 0,
@@ -50,6 +56,7 @@ export function useProductFormLogic({ initialData }: UseProductFormLogicProps) {
             stock: 0,
             trackStock: true,
             allowBackorder: false,
+            lowStockThreshold: 0,
             weight: 0,
             hasVariants: false,
             options: [],
@@ -79,11 +86,6 @@ export function useProductFormLogic({ initialData }: UseProductFormLogicProps) {
     useEffect(() => {
         if (!initialData && title) {
             const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-            const currentSlug = form.getValues("slug");
-            // Only update if slug is empty or matches the auto-generated pattern of the *previous* title character
-            // To be simple: if user hasn't manually touched slug (hard to track without dirtiness), we update.
-            // For MVP, just update if creation mode and slug field isn't dirty? 
-            // react-hook-form 'dirtyFields' can help, but for now let's stick to the previous simple logic:
             form.setValue("slug", slug, { shouldValidate: true });
         }
     }, [title, initialData, form]);
@@ -96,8 +98,13 @@ export function useProductFormLogic({ initialData }: UseProductFormLogicProps) {
 
         setLoading(true);
         try {
+            // Clean undefined values for Firestore
+            const cleanedData = Object.fromEntries(
+                Object.entries(data).filter(([_, v]) => v !== undefined)
+            );
+
             const productData = {
-                ...data,
+                ...cleanedData,
                 storeId,
                 updatedAt: Date.now(),
             };

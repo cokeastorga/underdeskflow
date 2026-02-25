@@ -9,28 +9,30 @@ import { useCart } from "@/store/useCart";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { WishlistButton } from "./WishlistButton";
+import { formatPrice } from "@/lib/utils/currency";
 
 // ... imports
 
 interface ProductCardProps {
     product: Product;
+    storeId: string;
     template?: "modern" | "minimal" | "bold";
 }
 
-export function ProductCard({ product, template = "modern" }: ProductCardProps) {
+export function ProductCard({ product, storeId, template = "modern" }: ProductCardProps) {
     const addItem = useCart((state) => state.addItem);
 
     const handleAddToCart = (e: React.MouseEvent) => {
         e.preventDefault();
-        addItem(product);
-        toast.success("Added to cart!");
+        addItem(product, storeId);
+        toast.success(`¡${product.name} añadido al carrito!`);
     };
 
     // Luxury & Standard Templates
     if (template === "minimal") {
         return (
             <div className="group relative flex flex-col bg-transparent">
-                <Link href={`/products/${product.id}`} className="relative aspect-[3/4] overflow-hidden bg-gray-100 mb-4">
+                <Link href={`/${storeId}/products/${product.id}`} className="relative aspect-[3/4] overflow-hidden bg-gray-100 mb-4">
                     {product.image ? (
                         <Image
                             src={product.image}
@@ -61,11 +63,11 @@ export function ProductCard({ product, template = "modern" }: ProductCardProps) 
 
                 <div className="flex flex-col items-center text-center space-y-1">
                     <h3 className="text-sm font-medium tracking-wide uppercase text-gray-900 group-hover:text-black transition-colors">
-                        <Link href={`/products/${product.id}`}>{product.name}</Link>
+                        <Link href={`/${storeId}/products/${product.id}`}>{product.name}</Link>
                     </h3>
                     <p className="text-xs text-muted-foreground tracking-wider">{product.category}</p>
                     <p className="text-sm font-light text-gray-900">
-                        {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(product.price)}
+                        {formatPrice(product.price)}
                     </p>
                 </div>
             </div>
@@ -75,7 +77,7 @@ export function ProductCard({ product, template = "modern" }: ProductCardProps) 
     if (template === "bold") {
         return (
             <div className="group relative flex flex-col border-4 border-black bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all duration-200">
-                <Link href={`/products/${product.id}`} className="relative aspect-square overflow-hidden border-b-4 border-black bg-yellow-300">
+                <Link href={`/${storeId}/products/${product.id}`} className="relative aspect-square overflow-hidden border-b-4 border-black bg-yellow-300">
                     {product.image && (
                         <Image
                             src={product.image}
@@ -101,13 +103,13 @@ export function ProductCard({ product, template = "modern" }: ProductCardProps) 
                 <div className="p-4 flex flex-col gap-3">
                     <div className="flex justify-between items-start gap-2">
                         <h3 className="font-black text-xl md:text-2xl uppercase leading-none tracking-tighter break-words">
-                            <Link href={`/products/${product.id}`}>{product.name}</Link>
+                            <Link href={`/${storeId}/products/${product.id}`}>{product.name}</Link>
                         </h3>
                     </div>
 
                     <div className="flex items-end justify-between mt-2">
                         <div className="text-xl font-black bg-white px-1">
-                            {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(product.price)}
+                            {formatPrice(product.price)}
                         </div>
                         <Button onClick={handleAddToCart} className="rounded-none border-2 border-black bg-black text-white hover:bg-white hover:text-black font-bold uppercase tracking-tight text-xs h-10 px-4 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none transition-all">
                             Add +
@@ -120,13 +122,13 @@ export function ProductCard({ product, template = "modern" }: ProductCardProps) 
 
     // Modern (Default) - Luxury Version
     return (
-        <div className="group relative flex flex-col bg-white rounded-2xl overflow-hidden transition-all duration-500 hover:shadow-xl">
+        <div className="group relative flex flex-col bg-white dark:bg-zinc-950 rounded-2xl overflow-hidden transition-all duration-500 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] hover:-translate-y-1">
             {/* Image Overlay Actions */}
             <div className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 <WishlistButton product={product} className="bg-white/80 backdrop-blur-sm shadow-sm hover:bg-white" />
             </div>
 
-            <Link href={`/products/${product.id}`} className="relative aspect-[4/5] overflow-hidden bg-gray-100">
+            <Link href={`/${storeId}/products/${product.id}`} className="relative aspect-[4/5] overflow-hidden bg-gray-100">
                 {/* Image */}
                 {product.image ? (
                     <>
@@ -177,16 +179,14 @@ export function ProductCard({ product, template = "modern" }: ProductCardProps) 
             </Link>
 
             {/* Info */}
-            <div className="p-4 space-y-1">
-                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{product.category}</p>
-                <div className="flex justify-between items-baseline">
-                    <h3 className="font-semibold text-base text-gray-900 leading-tight group-hover:text-primary transition-colors">
-                        <Link href={`/products/${product.id}`}>{product.name}</Link>
-                    </h3>
-                    <span className="font-bold text-sm ml-2">
-                        {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(product.price)}
-                    </span>
-                </div>
+            <div className="p-5 flex flex-col items-center text-center space-y-2">
+                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em]">{product.category}</p>
+                <h3 className="font-bold text-sm md:text-base text-gray-900 dark:text-gray-100 leading-tight group-hover:text-primary transition-colors line-clamp-2 min-h-[2.5rem] w-full max-w-[200px]">
+                    <Link href={`/${storeId}/products/${product.id}`}>{product.name}</Link>
+                </h3>
+                <span className="font-black text-base md:text-lg">
+                    {formatPrice(product.price)}
+                </span>
             </div>
         </div>
     );

@@ -21,6 +21,43 @@ export interface PromoBanner {
     position: number; // 1, 2, 3... to determine order/placement
 }
 
+export interface AboutPageConfig {
+    title: string;
+    description: string;
+    mission?: string;
+    vision?: string;
+    values?: { id: string; title: string; description: string }[];
+    image1?: string;
+    image2?: string;
+}
+
+export interface HelpCategory {
+    id: string;
+    title: string;
+    description: string;
+    icon?: string;
+    links: string[];
+}
+
+export interface FAQ {
+    id: string;
+    question: string;
+    answer: string;
+}
+
+export interface HelpCenterConfig {
+    enabled: boolean;
+    categories: HelpCategory[];
+    faqs: FAQ[];
+}
+
+export interface CheckoutConfig {
+    allowCartDrawer: boolean;
+    currencySymbol: string;
+    minOrderAmount?: number;
+    showStockGuards: boolean;
+}
+
 export interface Store {
     id: string; // matches storeId
     name: string;
@@ -48,6 +85,8 @@ export interface Store {
 
     onboardingStatus?: "pending" | "completed" | number; // number indicates current step
     plan?: PlanId; // denormalized from user profile for fast reads
+
+    aboutPage?: AboutPageConfig; // New: Content for /about page
 
     // Configuration
     apiKeys?: {
@@ -126,6 +165,9 @@ export interface Store {
         promoBanners?: PromoBanner[];
         customCSS?: string; // New
     };
+
+    helpCenter?: HelpCenterConfig; // New: Support page content
+    checkoutConfig?: CheckoutConfig; // New: Cart & Checkout behavior
 
     domains?: {
         name: string;

@@ -8,6 +8,7 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { CarouselSlide } from "@/types";
+import { motion, AnimatePresence } from "framer-motion";
 
 const DEFAULT_SLIDES: CarouselSlide[] = [
     {
@@ -37,37 +38,48 @@ const DEFAULT_SLIDES: CarouselSlide[] = [
 ];
 
 export function HeroCarousel({ storeId, slides = [], template = "modern" }: { storeId: string; slides?: CarouselSlide[]; template?: "modern" | "minimal" | "bold" }) {
-    const [emblaRef] = useEmblaCarousel({ loop: true }, [Autoplay({ delay: 6000 })]);
-    const activeSlides = slides && slides.length > 0 ? slides : DEFAULT_SLIDES;
+    const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true }, [Autoplay({ delay: 6000, stopOnInteraction: false })]);
+
+    // If no slides, show a branded placeholder instead of demo fallback
+    const activeSlides = slides && slides.length > 0 ? slides : [
+        {
+            id: "placeholder",
+            title: "Bienvenidos",
+            subtitle: "Explora nuestro catálogo exclusivo.",
+            image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=2070&auto=format&fit=crop",
+            ctaText: "Ver Productos",
+            ctaLink: "/products",
+        }
+    ];
 
     // Luxury Styles Configuration
     const styles = {
         modern: {
-            wrapper: "h-[80vh] min-h-[600px]",
+            wrapper: "h-[85vh] min-h-[700px]",
             imageAnimation: "animate-slow-zoom",
-            overlay: "bg-gradient-to-t from-black/80 via-black/20 to-black/30",
-            contentContainer: "flex flex-col items-center justify-center text-center p-8 max-w-5xl mx-auto px-4",
-            title: "text-4xl md:text-7xl lg:text-8xl font-bold font-serif tracking-tight text-white drop-shadow-xl",
-            subtitle: "text-sm md:text-2xl font-light tracking-[0.2em] uppercase text-white/90 mb-6",
-            button: "bg-white text-black hover:bg-white/90 rounded-full px-8 py-3 md:px-10 md:py-4 text-sm md:text-base font-semibold tracking-widest uppercase transition-all hover:scale-105 hover:shadow-lg"
+            overlay: "bg-gradient-to-t from-black/90 via-black/20 to-black/40",
+            contentContainer: "flex flex-col items-center justify-center text-center p-8 max-w-6xl mx-auto px-4",
+            title: "text-5xl md:text-8xl lg:text-9xl font-bold font-serif tracking-tighter text-white drop-shadow-2xl leading-[0.9]",
+            subtitle: "text-xs md:text-xl font-medium tracking-[0.4em] uppercase text-white/80 mb-8",
+            button: "bg-white text-black hover:bg-black hover:text-white rounded-full px-10 py-4 md:px-14 md:py-6 text-xs md:text-sm font-bold tracking-[0.2em] uppercase transition-all duration-500 hover:scale-105 hover:shadow-[0_0_30px_rgba(255,255,255,0.3)]"
         },
         minimal: {
-            wrapper: "h-[70vh] min-h-[500px]",
-            imageAnimation: "",
-            overlay: "bg-black/10",
-            contentContainer: "flex flex-col items-start justify-center text-left p-8 md:p-24 max-w-7xl mx-auto h-full px-6",
-            title: "text-4xl md:text-7xl font-light tracking-tighter text-white mix-blend-difference leading-tight",
-            subtitle: "text-xs md:text-sm font-bold tracking-[0.3em] uppercase text-white mb-4 border-l-2 border-white pl-4",
-            button: "bg-transparent border border-white text-white hover:bg-white hover:text-black rounded-none px-6 py-2 md:px-8 md:py-3 text-xs font-bold uppercase tracking-widest transition-all backdrop-blur-sm"
+            wrapper: "h-[75vh] min-h-[600px]",
+            imageAnimation: "grayscale hover:grayscale-0 transition-all duration-1000",
+            overlay: "bg-black/5",
+            contentContainer: "flex flex-col items-start justify-center text-left p-8 md:p-32 max-w-7xl mx-auto h-full px-6",
+            title: "text-5xl md:text-8xl font-light tracking-tighter text-white mix-blend-difference leading-none",
+            subtitle: "text-[10px] md:text-xs font-black tracking-[0.5em] uppercase text-white mb-6 border-l-4 border-white pl-6",
+            button: "bg-transparent border-2 border-white text-white hover:bg-white hover:text-black rounded-none px-8 py-3 md:px-12 md:py-4 text-[10px] font-black uppercase tracking-[0.3em] transition-all backdrop-blur-md"
         },
         bold: {
-            wrapper: "h-[85vh] min-h-[600px]",
-            imageAnimation: "grayscale hover:grayscale-0 transition-all duration-700",
-            overlay: "bg-black/40",
+            wrapper: "h-[90vh] min-h-[750px]",
+            imageAnimation: "contrast-125 brightness-75",
+            overlay: "bg-black/30",
             contentContainer: "flex flex-col items-center justify-center text-center p-4 max-w-full mx-auto relative z-10 px-4",
-            title: "text-5xl md:text-8xl lg:text-9xl font-black uppercase tracking-tighter text-transparent stroke-white stroke-2 bg-clip-text bg-gradient-to-b from-white to-white/50 leading-none",
-            subtitle: "text-lg md:text-3xl font-black bg-primary text-primary-foreground px-4 py-2 transform -skew-x-12 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]",
-            button: "mt-8 bg-primary text-primary-foreground hover:bg-primary/90 rounded-none px-8 py-4 md:px-12 md:py-5 text-lg md:text-xl font-black uppercase border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-y-2 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
+            title: "text-6xl md:text-[10rem] lg:text-[12rem] font-black uppercase tracking-tighter text-white leading-none drop-shadow-[10px_10px_0px_rgba(0,0,0,1)]",
+            subtitle: "text-xl md:text-4xl font-black bg-yellow-400 text-black px-6 py-3 transform -rotate-2 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] mb-12",
+            button: "bg-black text-white hover:bg-yellow-400 hover:text-black rounded-none px-12 py-6 md:px-20 md:py-8 text-xl md:text-2xl font-black uppercase border-4 border-black shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] hover:translate-x-2 hover:translate-y-2 hover:shadow-none transition-all"
         }
     };
 
@@ -96,31 +108,56 @@ export function HeroCarousel({ storeId, slides = [], template = "modern" }: { st
                         {/* Content */}
                         <div className="absolute inset-0 flex flex-col h-full w-full">
                             <div className={`flex-1 ${currentStyle.contentContainer}`}>
-                                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-8 duration-1000 fill-mode-forwards">
+                                <motion.div
+                                    initial={{ opacity: 0, y: 50 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 1, ease: "circOut", delay: 0.2 }}
+                                    className="space-y-8 group/content"
+                                >
                                     {template === 'minimal' && (
-                                        <p className={currentStyle.subtitle}>
+                                        <motion.p
+                                            initial={{ opacity: 0, x: -20 }}
+                                            whileInView={{ opacity: 1, x: 0 }}
+                                            transition={{ duration: 0.8, delay: 0.5 }}
+                                            className={currentStyle.subtitle}
+                                        >
                                             {slide.subtitle}
-                                        </p>
+                                        </motion.p>
                                     )}
 
-                                    <h1 className={currentStyle.title}>
+                                    <motion.h1
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        whileInView={{ opacity: 1, scale: 1 }}
+                                        transition={{ duration: 1, delay: 0.3 }}
+                                        className={currentStyle.title}
+                                    >
                                         {slide.title}
-                                    </h1>
+                                    </motion.h1>
 
                                     {template !== 'minimal' && (
-                                        <p className={currentStyle.subtitle}>
+                                        <motion.p
+                                            initial={{ opacity: 0 }}
+                                            whileInView={{ opacity: 1 }}
+                                            transition={{ duration: 0.8, delay: 0.6 }}
+                                            className={currentStyle.subtitle}
+                                        >
                                             {slide.subtitle}
-                                        </p>
+                                        </motion.p>
                                     )}
 
-                                    <div className="pt-4">
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 20 }}
+                                        whileInView={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.5, delay: 0.8 }}
+                                        className="pt-6"
+                                    >
                                         <Link href={slide.ctaLink.startsWith("/") ? `/${storeId}${slide.ctaLink}` : slide.ctaLink}>
                                             <Button className={currentStyle.button}>
                                                 {slide.ctaText}
                                             </Button>
                                         </Link>
-                                    </div>
-                                </div>
+                                    </motion.div>
+                                </motion.div>
                             </div>
                         </div>
                     </div>

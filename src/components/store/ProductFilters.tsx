@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Filter, ChevronDown, ChevronUp } from "lucide-react";
+import { Filter, ChevronDown, ChevronUp, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -12,6 +12,7 @@ import { db } from "@/lib/firebase/config";
 import { Category } from "@/types";
 import { Store } from "@/types/store";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Badge } from "@/components/ui/badge";
 
 interface FilterConfig {
     price: boolean;
@@ -32,8 +33,11 @@ export function ProductFilters({ storeId }: { storeId: string }) {
     // Filter State
     const [priceRange, setPriceRange] = useState([0, 1000000]);
     const currentCategory = searchParams.get("category");
+    const currentSize = searchParams.get("size");
 
     useEffect(() => {
+        if (!storeId) return;
+
         const fetchData = async () => {
             try {
                 // 1. Fetch Store Config
@@ -77,25 +81,25 @@ export function ProductFilters({ storeId }: { storeId: string }) {
         router.push(`/${storeId}/products?${params.toString()}`);
     };
 
-    const handlePriceChange = (value: number[]) => {
-        setPriceRange(value);
-        // Debounce or apply on button click in real app
-        // For now just local state, maybe add "Apply" button
+    const clearFilters = () => {
+        router.push(`/${storeId}/products`);
     };
 
     const FilterSection = ({ title, children, defaultOpen = true }: { title: string, children: React.ReactNode, defaultOpen?: boolean }) => {
         const [isOpen, setIsOpen] = useState(defaultOpen);
         return (
-            <div className="py-4 border-b last:border-0">
+            <div className="py-6 border-b border-zinc-100 last:border-0">
                 <button
                     onClick={() => setIsOpen(!isOpen)}
-                    className="flex items-center justify-between w-full font-medium hover:text-primary transition-colors focus:outline-none"
+                    className="flex items-center justify-between w-full group focus:outline-none"
                 >
-                    {title}
-                    {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 group-hover:text-black transition-colors">
+                        {title}
+                    </span>
+                    {isOpen ? <ChevronUp className="h-3 w-3 text-zinc-400" /> : <ChevronDown className="h-3 w-3 text-zinc-400" />}
                 </button>
                 {isOpen && (
-                    <div className="pt-4 space-y-4 animate-in slide-in-from-top-2 duration-200">
+                    <div className="pt-5 space-y-4 animate-in fade-in slide-in-from-top-1 duration-300">
                         {children}
                     </div>
                 )}
@@ -104,34 +108,48 @@ export function ProductFilters({ storeId }: { storeId: string }) {
     };
 
     const FilterContent = () => (
-        <div className="space-y-1">
+        <div className="flex flex-col">
+            {(currentCategory || currentSize) && (
+                <div className="pb-6 mb-6 border-b flex flex-wrap gap-2">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={clearFilters}
+                        className="h-7 text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-red-600 px-0"
+                    >
+                        Limpiar Todo
+                    </Button>
+                </div>
+            )}
+
             {config.categories && categories.length > 0 && (
                 <FilterSection title="Categorías">
-                    <div className="space-y-2">
-                        {categories.map((cat) => (
-                            <div key={cat.id} className="flex items-center space-x-2">
-                                <Checkbox
-                                    id={`cat-${cat.id}`}
-                                    checked={currentCategory === cat.slug || currentCategory === cat.name} // Simplified matching
-                                    onCheckedChange={() => handleCategoryChange(cat.slug || cat.name)}
-                                />
-                                <Label
-                                    htmlFor={`cat-${cat.id}`}
-                                    className="text-sm font-normal cursor-pointer hover:text-primary"
+                    <div className="flex flex-col gap-3">
+                        {categories.map((cat) => {
+                            const isSelected = currentCategory === cat.slug || currentCategory === cat.name;
+                            return (
+                                <button
+                                    key={cat.id}
+                                    onClick={() => handleCategoryChange(cat.slug || cat.name || "")}
+                                    className={`flex items-center justify-between text-left transition-all duration-200 group ${isSelected ? "text-black" : "text-zinc-500 hover:text-black"
+                                        }`}
                                 >
-                                    {cat.name}
-                                </Label>
-                            </div>
-                        ))}
+                                    <span className={`text-sm tracking-tight ${isSelected ? "font-bold" : "font-medium"}`}>
+                                        {cat.name}
+                                    </span>
+                                    {isSelected && <div className="h-1.5 w-1.5 rounded-full bg-black shrink-0" />}
+                                </button>
+                            );
+                        })}
                     </div>
                 </FilterSection>
             )}
 
             {config.price && (
-                <FilterSection title="Precio">
-                    <div className="space-y-4 px-1">
+                <FilterSection title="Rango de Precio">
+                    <div className="space-y-6 px-1">
                         <Slider
-                            defaultValue={[0, 100000]}
+                            defaultValue={[0, 1000000]}
                             max={1000000}
                             step={1000}
                             value={priceRange}
@@ -142,29 +160,36 @@ export function ProductFilters({ storeId }: { storeId: string }) {
                                 params.set("maxPrice", value[1].toString());
                                 router.push(`/${storeId}/products?${params.toString()}`);
                             }}
+                            className="py-4"
                         />
-                        <div className="flex items-center justify-between text-sm">
-                            <span>${priceRange[0].toLocaleString()}</span>
-                            <span>${priceRange[1].toLocaleString()}</span>
+                        <div className="flex items-center justify-between">
+                            <div className="flex flex-col">
+                                <span className="text-[9px] uppercase font-bold text-zinc-400">Desde</span>
+                                <span className="text-sm font-black">${priceRange[0].toLocaleString()}</span>
+                            </div>
+                            <div className="h-px w-4 bg-zinc-200 mt-3" />
+                            <div className="flex flex-col text-right">
+                                <span className="text-[9px] uppercase font-bold text-zinc-400">Hasta</span>
+                                <span className="text-sm font-black">${priceRange[1].toLocaleString()}</span>
+                            </div>
                         </div>
                     </div>
                 </FilterSection>
             )}
 
-            {/* Placeholder for Brands/Attributes if enabled but no data backends yet */}
             {config.brands && (
                 <FilterSection title="Marcas">
-                    <p className="text-xs text-muted-foreground">No hay marcas disponibles.</p>
+                    <p className="text-xs text-muted-foreground font-serif italic">Próximamente piezas exclusivas.</p>
                 </FilterSection>
             )}
 
             {config.attributes && (
-                <FilterSection title="Talla">
-                    <div className="flex flex-wrap gap-2">
+                <FilterSection title="Talla / Dimensión">
+                    <div className="grid grid-cols-4 gap-2">
                         {['XS', 'S', 'M', 'L', 'XL'].map(size => {
                             const isSelected = searchParams.get("size") === size;
                             return (
-                                <div
+                                <button
                                     key={size}
                                     onClick={() => {
                                         const params = new URLSearchParams(searchParams.toString());
@@ -172,13 +197,13 @@ export function ProductFilters({ storeId }: { storeId: string }) {
                                         else params.set("size", size);
                                         router.push(`/${storeId}/products?${params.toString()}`);
                                     }}
-                                    className={`border rounded-md px-3 py-1 text-sm cursor-pointer transition-colors ${isSelected
-                                        ? "bg-primary text-primary-foreground border-primary"
-                                        : "hover:border-black hover:bg-slate-50"
+                                    className={`relative h-10 flex items-center justify-center text-xs font-bold transition-all duration-300 border rounded-none ${isSelected
+                                            ? "bg-black text-white border-black"
+                                            : "hover:border-black text-zinc-400 hover:text-black"
                                         }`}
                                 >
                                     {size}
-                                </div>
+                                </button>
                             );
                         })}
                     </div>
@@ -187,36 +212,69 @@ export function ProductFilters({ storeId }: { storeId: string }) {
         </div>
     );
 
-    if (loading) return <div className="w-64 space-y-4"><div className="h-8 bg-slate-100 rounded animate-pulse" /><div className="h-64 bg-slate-100 rounded animate-pulse" /></div>;
+    if (loading) return (
+        <div className="space-y-8">
+            {[1, 2, 3].map(i => (
+                <div key={i} className="space-y-4">
+                    <div className="h-3 w-20 bg-zinc-100 rounded animate-pulse" />
+                    <div className="h-10 w-full bg-zinc-50 rounded animate-pulse" />
+                </div>
+            ))}
+        </div>
+    );
 
     return (
-        <>
+        <div className="relative">
             {/* Desktop Filters */}
-            <div className="hidden lg:block w-64 flex-shrink-0">
-                <div className="sticky top-24">
-                    <h2 className="font-bold text-xl mb-4 flex items-center gap-2"><Filter className="w-5 h-5" /> Filtros</h2>
+            <div className="hidden lg:block">
+                <div className="sticky top-32 space-y-8">
+                    <div className="flex items-center justify-between pb-6 border-b border-black">
+                        <h2 className="font-bold text-xs uppercase tracking-[0.3em] flex items-center gap-3">
+                            Refinar Selección
+                        </h2>
+                    </div>
                     <FilterContent />
+
+                    <div className="pt-12">
+                        <div className="p-6 bg-zinc-50 border border-zinc-100">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-2">Asistencia</p>
+                            <p className="text-sm font-serif italic text-zinc-600 mb-4 font-medium">¿Necesitas ayuda con tu elección?</p>
+                            <Button variant="link" className="p-0 h-auto text-xs font-bold uppercase tracking-wider text-black">
+                                Contactar Personal Shopper
+                            </Button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             {/* Mobile Filters */}
-            <div className="lg:hidden mb-6">
+            <div className="lg:hidden">
                 <Sheet>
                     <SheetTrigger asChild>
-                        <Button variant="outline" className="w-full">
-                            <Filter className="mr-2 h-4 w-4" /> Filtrar Productos
+                        <Button variant="outline" className="w-full h-12 rounded-none border-black text-xs font-bold uppercase tracking-[0.2em] hover:bg-black hover:text-white transition-all">
+                            <Filter className="mr-2 h-3 w-3" /> Filtrar Colección
                         </Button>
                     </SheetTrigger>
-                    <SheetContent side="left" className="w-[300px] sm:w-[540px]">
-                        <SheetHeader>
-                            <SheetTitle>Filtros</SheetTitle>
-                        </SheetHeader>
-                        <div className="py-6 h-full overflow-y-auto">
-                            <FilterContent />
+                    <SheetContent side="left" className="w-full sm:w-[400px] p-0 border-none">
+                        <div className="h-full flex flex-col">
+                            <SheetHeader className="p-8 border-b border-zinc-100 text-left">
+                                <SheetTitle className="text-xs font-bold uppercase tracking-[0.3em]">Filtros</SheetTitle>
+                            </SheetHeader>
+                            <div className="flex-1 overflow-y-auto px-8 py-4">
+                                <FilterContent />
+                            </div>
+                            <div className="p-8 border-t border-zinc-100">
+                                <Button
+                                    className="w-full h-12 rounded-none bg-black text-white text-xs font-bold uppercase tracking-widest"
+                                    onClick={() => { }} // Placeholder to close or apply
+                                >
+                                    Ver Resultados
+                                </Button>
+                            </div>
                         </div>
                     </SheetContent>
                 </Sheet>
             </div>
-        </>
+        </div>
     );
 }

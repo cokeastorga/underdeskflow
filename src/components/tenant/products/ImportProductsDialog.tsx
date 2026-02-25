@@ -32,6 +32,8 @@ interface ParsedProduct {
     warranty: string;
     careInstructions: string;
     weight: number;
+    sku: string;
+    barcode: string;
     isValid: boolean;
     errors: string[];
 }
@@ -115,6 +117,8 @@ export function ImportProductsDialog({ onImportSuccess }: { onImportSuccess: () 
                     warranty,
                     careInstructions,
                     weight: isNaN(weight) ? 0 : weight,
+                    sku: "", // Will be generated if empty
+                    barcode: "",
                     isValid: errors.length === 0,
                     errors
                 });
@@ -154,7 +158,7 @@ export function ImportProductsDialog({ onImportSuccess }: { onImportSuccess: () 
                     order: index
                 }));
 
-                batch.set(newDocRef, {
+                const productToSave = {
                     storeId,
                     name: product.name,
                     title: product.name, // Support both fields
@@ -173,13 +177,21 @@ export function ImportProductsDialog({ onImportSuccess }: { onImportSuccess: () 
                     warranty: product.warranty,
                     careInstructions: product.careInstructions,
                     weight: product.weight,
-
+                    sku: product.sku || `SKU-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+                    barcode: product.barcode || "",
                     isActive: true,
-                    status: 'active',
+                    status: 'active' as const,
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
                     hasVariants: false
-                });
+                };
+
+                // Clean undefined values for Firestore
+                const cleanedData = Object.fromEntries(
+                    Object.entries(productToSave).filter(([_, v]) => v !== undefined)
+                );
+
+                batch.set(newDocRef, cleanedData);
             });
 
             await batch.commit();

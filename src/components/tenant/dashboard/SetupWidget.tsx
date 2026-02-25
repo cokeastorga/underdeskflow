@@ -6,7 +6,7 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Circle, ArrowRight, Store, Palette, Package, CreditCard } from "lucide-react";
+import { CheckCircle2, Circle, ArrowRight, Store, Palette, Package, CreditCard, Globe, Truck, Zap, Megaphone } from "lucide-react";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 import { Store as StoreType } from "@/types/store";
@@ -46,35 +46,59 @@ export function SetupWidget() {
     const steps = [
         {
             id: 1,
-            label: "Tienda Creada",
-            description: "Tu tienda ha sido registrada exitosamente.",
+            label: "Identidad",
+            description: "Nombre y logo de tu marca.",
             icon: Store,
             completed: true,
             href: "/tenant/settings"
         },
         {
             id: 2,
-            label: "Personalizar Diseño",
-            description: "Define lógos, colores y estructura.",
+            label: "Diseño",
+            description: "Colores y estilo visual.",
             icon: Palette,
             completed: store.design?.template !== undefined || (typeof store.onboardingStatus === 'number' && store.onboardingStatus >= 2) || store.onboardingStatus === 'completed',
             href: "/tenant/design"
         },
         {
             id: 3,
-            label: "Agregar Primer Producto",
-            description: "Sube tu primer producto al catálogo.",
-            icon: Package,
-            completed: (typeof store.onboardingStatus === 'number' && store.onboardingStatus >= 3) || store.onboardingStatus === 'completed', // Assuming 3 is set after first product
-            href: "/tenant/products/new"
+            label: "Dominio",
+            description: "Tu dirección en internet.",
+            icon: Globe,
+            completed: (store.domains?.length ?? 0) > 0 || (typeof store.onboardingStatus === 'number' && store.onboardingStatus >= 3) || store.onboardingStatus === 'completed',
+            href: "/tenant/settings"
         },
         {
             id: 4,
-            label: "Configurar Pagos",
-            description: "Conecta Stripe o MercadoPago.",
-            icon: CreditCard,
-            completed: !!store.apiKeys?.stripe || !!store.apiKeys?.mercadoPago,
+            label: "Catálogo",
+            description: "Agrega tu primer producto.",
+            icon: Package,
+            completed: (typeof store.onboardingStatus === 'number' && store.onboardingStatus >= 4) || store.onboardingStatus === 'completed',
+            href: "/tenant/products/new"
+        },
+        {
+            id: 5,
+            label: "Logística",
+            description: "Zonas y costos de envío.",
+            icon: Truck,
+            completed: (typeof store.onboardingStatus === 'number' && store.onboardingStatus >= 5) || store.onboardingStatus === 'completed',
+            href: "/tenant/shipping"
+        },
+        {
+            id: 6,
+            label: "Conexiones",
+            description: "Pasarelas de pago y canales.",
+            icon: Zap,
+            completed: !!store.apiKeys?.stripe || !!store.apiKeys?.mercadoPago || (typeof store.onboardingStatus === 'number' && store.onboardingStatus >= 6) || store.onboardingStatus === 'completed',
             href: "/tenant/settings"
+        },
+        {
+            id: 7,
+            label: "Marketing",
+            description: "Banners y promociones.",
+            icon: Megaphone,
+            completed: (typeof store.onboardingStatus === 'number' && store.onboardingStatus >= 7) || store.onboardingStatus === 'completed',
+            href: "/tenant/marketing"
         }
     ];
 
@@ -114,7 +138,7 @@ export function SetupWidget() {
                                         ? 'bg-primary/5 border border-primary/10'
                                         : isNext
                                             ? 'bg-white dark:bg-zinc-800 border-2 border-primary shadow-lg scale-105 z-10'
-                                            : 'bg-white dark:bg-zinc-800 border opacity-60 grayscale hover:opacity-100 hover:grayscale-0'
+                                            : 'bg-white dark:bg-zinc-800 border hover:border-primary/50'
                                     }
                                 `}
                             >

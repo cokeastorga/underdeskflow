@@ -49,6 +49,7 @@ export interface Product extends BaseProduct {
     isNew?: boolean;
     size?: string;
     isFeatured?: boolean;
+    freeShipping?: boolean;
 
     // Inventory & Organization
     sku?: string;

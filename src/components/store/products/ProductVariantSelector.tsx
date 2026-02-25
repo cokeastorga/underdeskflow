@@ -8,12 +8,14 @@ import { useCart } from "@/store/useCart";
 import { ShoppingCart, Check } from "lucide-react";
 import { toast } from "sonner";
 import { SizeGuideModal } from "./SizeGuideModal";
+import { formatPrice } from "@/lib/utils/currency";
 
 interface VariantSelectorProps {
     product: Product;
+    storeId: string;
 }
 
-export function ProductVariantSelector({ product }: VariantSelectorProps) {
+export function ProductVariantSelector({ product, storeId }: VariantSelectorProps) {
     const addItem = useCart((state) => state.addItem);
     const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
     const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
@@ -66,8 +68,8 @@ export function ProductVariantSelector({ product }: VariantSelectorProps) {
         // We might need to extend useCart to support variants or just add it as is.
         // For now, let's assume simple add.
 
-        addItem(itemToAdd);
-        toast.success("Added to cart!");
+        addItem(itemToAdd, storeId);
+        toast.success(`¡${product.name} añadido al carrito!`);
     };
 
     const currentPrice = selectedVariant ? selectedVariant.price : product.price;
@@ -75,8 +77,8 @@ export function ProductVariantSelector({ product }: VariantSelectorProps) {
 
     return (
         <div className="space-y-6">
-            <div className="text-3xl font-medium tracking-tight">
-                {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(currentPrice)}
+            <div className="text-3xl font-black tracking-tight text-primary">
+                {formatPrice(currentPrice)}
             </div>
 
             {product.hasVariants && product.options?.map((option) => (
@@ -115,16 +117,16 @@ export function ProductVariantSelector({ product }: VariantSelectorProps) {
             <div className="pt-4">
                 <Button
                     size="lg"
-                    className="w-full h-14 text-lg gap-2"
+                    className="w-full h-16 rounded-2xl text-lg font-bold gap-3 shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all group"
                     onClick={handleAddToCart}
                     disabled={isOutOfStock}
                 >
                     {isOutOfStock ? (
-                        "Out of Stock"
+                        "Agotado"
                     ) : (
                         <>
-                            <ShoppingCart className="mr-2 h-5 w-5" />
-                            Add to Cart
+                            <ShoppingCart className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                            Añadir al Carrito
                         </>
                     )}
                 </Button>

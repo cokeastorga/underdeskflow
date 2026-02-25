@@ -155,10 +155,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
             />
             {/* Breadcrumb / Back Navigation */}
-            <div className="container py-8">
-                <Link href={`/${storeId}/products`} className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors group">
+            <div className="container py-8 flex justify-center">
+                <Link href={`/${storeId}/products`} className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-all duration-300 group tracking-[0.1em] uppercase">
                     <ArrowLeft className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" />
-                    Back to Collection
+                    Volver a la Colección
                 </Link>
             </div>
 
@@ -173,25 +173,25 @@ export default async function ProductPage({ params }: ProductPageProps) {
                     <div className="flex flex-col space-y-8 lg:max-w-xl lg:py-8 lg:sticky lg:top-24 self-start">
                         <FadeIn duration={800} delay={200} direction="up">
                             {/* Header */}
-                            <div className="space-y-4 border-b pb-8">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium uppercase tracking-wider">
+                            <div className="space-y-4 border-b pb-8 text-center lg:text-left flex flex-col items-center lg:items-start">
+                                <div className="flex items-center justify-between w-full">
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground font-bold uppercase tracking-[0.2em] w-full justify-center lg:justify-start">
                                         {product.brand && <span className="text-foreground">{product.brand}</span>}
                                         {product.brand && <span>•</span>}
                                         <span>{product.category}</span>
                                     </div>
                                     {product.rating && (
-                                        <div className="flex items-center gap-1">
+                                        <div className="flex items-center gap-1 absolute top-0 right-0 lg:relative">
                                             <Star className="w-4 h-4 fill-primary text-primary" />
                                             <span className="text-sm font-medium">{product.rating}</span>
                                         </div>
                                     )}
                                 </div>
-                                <h1 className={`text-4xl lg:text-5xl font-bold tracking-tight text-foreground ${currentTemplate === 'bold' ? 'uppercase font-black' : (currentTemplate === 'minimal' ? 'font-light' : 'font-serif')}`} style={{ fontFamily: headingFont }}>
+                                <h1 className={`text-4xl lg:text-5xl font-bold tracking-tight text-foreground w-full ${currentTemplate === 'bold' ? 'uppercase font-black' : (currentTemplate === 'minimal' ? 'font-light' : 'font-serif')}`} style={{ fontFamily: headingFont }}>
                                     {product.name}
                                 </h1>
                                 {product.model && (
-                                    <p className="text-lg text-muted-foreground">Model: {product.model}</p>
+                                    <p className="text-lg text-muted-foreground w-full">Modelo: {product.model}</p>
                                 )}
                             </div>
 
@@ -202,7 +202,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
                             {/* Variant Selector & Add to Cart */}
                             <div className="space-y-6 pb-8 border-b">
-                                <ProductVariantSelector product={product} />
+                                <ProductVariantSelector product={product} storeId={storeId} />
 
                                 <div className="flex items-center justify-center gap-6 text-xs uppercase tracking-widest text-muted-foreground pt-4">
                                     <div className="flex items-center gap-2">
@@ -295,7 +295,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                                 </h2>
                                 <div className="w-24 h-1 bg-primary mx-auto" />
                             </div>
-                            <ProductGrid products={relatedProducts} template={currentTemplate} />
+                            <ProductGrid products={relatedProducts} storeId={storeId} template={currentTemplate} />
                         </FadeIn>
                     </div>
                 </section>

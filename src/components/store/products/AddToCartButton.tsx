@@ -8,20 +8,25 @@ import { toast } from "sonner";
 
 interface AddToCartButtonProps {
     product: Product;
+    storeId: string;
 }
 
-export function AddToCartButton({ product }: AddToCartButtonProps) {
+export function AddToCartButton({ product, storeId }: AddToCartButtonProps) {
     const addItem = useCart((state) => state.addItem);
 
     const handleAddToCart = () => {
-        addItem(product);
-        toast.success("Added to cart!");
+        addItem(product, storeId);
+        toast.success(`¡${product.name} añadido al carrito!`);
     };
 
     return (
-        <Button size="lg" className="w-full sm:w-auto text-lg h-12 gap-2" onClick={handleAddToCart}>
-            <ShoppingCart className="mr-2 h-5 w-5" />
-            Add to Cart
+        <Button
+            size="lg"
+            className="w-full sm:w-auto text-lg h-14 rounded-2xl gap-3 font-bold shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all group"
+            onClick={handleAddToCart}
+        >
+            <ShoppingCart className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+            Añadir al Carrito
         </Button>
     );
 }

@@ -9,10 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Loader2, Save, LayoutGrid, CreditCard, Store as StoreIcon, Smartphone, Monitor, Plus, Trash2, Palette, Type, LayoutTemplate, Megaphone, Layers, Filter } from "lucide-react";
+import { Loader2, Save, LayoutGrid, CreditCard, Store as StoreIcon, Smartphone, Monitor, Plus, Trash2, Palette, Type, LayoutTemplate, Megaphone, Layers, Filter, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -91,6 +92,28 @@ export default function DesignPage() {
         brands: true,
         attributes: false
     });
+
+    // About Page State
+    const [aboutTitle, setAboutTitle] = useState("");
+    const [aboutDescription, setAboutDescription] = useState("");
+    const [aboutMission, setAboutMission] = useState("");
+    const [aboutVision, setAboutVision] = useState("");
+    const [aboutImage1, setAboutImage1] = useState("");
+    const [aboutImage2, setAboutImage2] = useState("");
+    const [aboutValues, setAboutValues] = useState<{ id: string, title: string, description: string }[]>([]);
+
+    // Help Center State
+    const [helpEnabled, setHelpEnabled] = useState(true);
+    const [helpCategories, setHelpCategories] = useState<any[]>([]);
+    const [helpFaqs, setHelpFaqs] = useState<any[]>([]);
+
+    // Checkout Config State
+    const [allowCartDrawer, setAllowCartDrawer] = useState(true);
+    const [currencySymbol, setCurrencySymbol] = useState("$");
+    const [minOrderAmount, setMinOrderAmount] = useState<number>(0);
+    const [showStockGuards, setShowStockGuards] = useState(true);
+
+    const [previewPage, setPreviewPage] = useState<'home' | 'about' | 'help'>('home');
 
     useEffect(() => {
         if (!storeId) return;
@@ -173,6 +196,29 @@ export default function DesignPage() {
                             });
                         }
                     }
+
+                    if (data.aboutPage) {
+                        setAboutTitle(data.aboutPage.title || "");
+                        setAboutDescription(data.aboutPage.description || "");
+                        setAboutMission(data.aboutPage.mission || "");
+                        setAboutVision(data.aboutPage.vision || "");
+                        setAboutImage1(data.aboutPage.image1 || "");
+                        setAboutImage2(data.aboutPage.image2 || "");
+                        setAboutValues(data.aboutPage.values || []);
+                    }
+
+                    if (data.helpCenter) {
+                        setHelpEnabled(data.helpCenter.enabled ?? true);
+                        setHelpCategories(data.helpCenter.categories || []);
+                        setHelpFaqs(data.helpCenter.faqs || []);
+                    }
+
+                    if (data.checkoutConfig) {
+                        setAllowCartDrawer(data.checkoutConfig.allowCartDrawer ?? true);
+                        setCurrencySymbol(data.checkoutConfig.currencySymbol || "$");
+                        setMinOrderAmount(data.checkoutConfig.minOrderAmount || 0);
+                        setShowStockGuards(data.checkoutConfig.showStockGuards ?? true);
+                    }
                 }
             } catch (error) {
                 console.error(error);
@@ -213,15 +259,27 @@ export default function DesignPage() {
                         enableBrands: filters.brands,
                         enableAttributes: filters.attributes
                     },
-                    cardStyle: {
-                        showSubtitle,
-                        shadow,
-                        showPrice,
-                        priceSize: "md",
-                        border,
-                        hoverEffect,
-                        buttonStyle
-                    }
+                    buttonStyle
+                },
+                aboutPage: {
+                    title: aboutTitle,
+                    description: aboutDescription,
+                    mission: aboutMission,
+                    vision: aboutVision,
+                    image1: aboutImage1,
+                    image2: aboutImage2,
+                    values: aboutValues
+                },
+                helpCenter: {
+                    enabled: helpEnabled,
+                    categories: helpCategories,
+                    faqs: helpFaqs
+                },
+                checkoutConfig: {
+                    allowCartDrawer,
+                    currencySymbol,
+                    minOrderAmount,
+                    showStockGuards
                 }
             });
 
@@ -323,6 +381,156 @@ export default function DesignPage() {
         const currentCategory = categoryStyles[template] || categoryStyles.modern;
         const currentProduct = productStyles[template] || productStyles.modern;
 
+        const renderHome = () => (
+            <>
+                {/* Hero */}
+                {slides.length > 0 ? (
+                    <div className="aspect-[16/6] md:aspect-[21/9] bg-slate-100 relative overflow-hidden group">
+                        <img src={slides[0].image} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                        <div className={currentHero.containerRelative}>
+                            <div className={currentHero.container}>
+                                <h2 className={`mb-2 text-white ${currentHero.title}`} style={{ fontFamily: headingFont }}>{slides[0].title}</h2>
+                                <p className={`mb-4 text-white ${currentHero.subtitle}`}>{slides[0].subtitle}</p>
+                                <button className={currentHero.button} style={template === 'bold' ? { backgroundColor: primaryColor, color: secondaryColor, borderColor: 'black' } : (template === 'modern' ? { backgroundColor: '#fff', color: '#000' } : {})}>
+                                    {slides[0].ctaText}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="h-64 bg-slate-100 flex items-center justify-center text-muted-foreground">Hero Banner</div>
+                )}
+
+                {/* Sections */}
+                <div className="p-8 space-y-12">
+                    {/* Featured Categories Stub */}
+                    {homeSections.find(s => s.type === 'categories')?.enabled && (
+                        <div className="space-y-4">
+                            <div className="text-center">
+                                <h3 className={currentCategory.title} style={{ fontFamily: headingFont }}>Categorías</h3>
+                            </div>
+                            <div className="flex gap-4 justify-center overflow-x-auto pb-4 scrollbar-hide">
+                                {[1, 2, 3].map(i => (
+                                    <div key={i} className={currentCategory.card}>
+                                        <div className={currentCategory.img} />
+                                        <div className="h-3 w-16 bg-slate-200 rounded" />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Featured Products */}
+                    {homeSections.find(s => s.type === 'featured-products')?.enabled && (
+                        <div className="space-y-4">
+                            <div className="text-center mb-6">
+                                <h3 className={currentCategory.title} style={{ fontFamily: headingFont }}>Destacados</h3>
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                {[1, 2, 3, 4].map(i => (
+                                    <div key={i} className={`${currentProduct.card} ${hoverEffect === 'zoom' ? 'hover:scale-[1.02]' : ''} transition-transform duration-300`}>
+                                        <div className="aspect-[3/4] bg-slate-100 relative">
+                                            {template === 'bold' && <div className="absolute top-2 left-2 bg-black text-white text-[10px] font-bold px-1 uppercase">New</div>}
+                                        </div>
+                                        <div className={currentProduct.info}>
+                                            <div className={`h-4 w-3/4 bg-slate-100 mb-2 rounded ${currentProduct.title}`} />
+                                            <div className="h-4 w-1/4 bg-slate-100 rounded" />
+
+                                            {template !== 'minimal' && (
+                                                <div className={`mt-3 h-8 w-full bg-slate-900 rounded ${template === 'bold' ? 'rounded-none border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' : ''}`} />
+                                            )}
+                                            {template === 'minimal' && (
+                                                <div className="mt-3 h-8 w-full border border-black rounded-none" />
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </>
+        );
+
+        const renderAbout = () => (
+            <div className="p-8 space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="max-w-3xl mx-auto text-center space-y-4">
+                    <h2 className="text-4xl font-bold tracking-tight" style={{ fontFamily: headingFont }}>{aboutTitle || "Nuestra Historia"}</h2>
+                    <p className="text-lg text-muted-foreground whitespace-pre-wrap">{aboutDescription || "Descripción de la tienda..."}</p>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-12 items-center">
+                    <div className="aspect-square bg-slate-100 rounded-2xl overflow-hidden border">
+                        {aboutImage1 ? <img src={aboutImage1} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-muted-foreground">Imagen 1</div>}
+                    </div>
+                    <div className="space-y-6">
+                        {aboutMission && (
+                            <div className="space-y-2">
+                                <h3 className="font-bold uppercase tracking-wider text-xs text-primary" style={{ color: primaryColor }}>Nuestra Misión</h3>
+                                <p className="text-muted-foreground">{aboutMission}</p>
+                            </div>
+                        )}
+                        {aboutVision && (
+                            <div className="space-y-2">
+                                <h3 className="font-bold uppercase tracking-wider text-xs text-primary" style={{ color: primaryColor }}>Nuestra Visión</h3>
+                                <p className="text-muted-foreground">{aboutVision}</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {aboutValues.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-6 pt-12 border-t">
+                        {aboutValues.map((val: any) => (
+                            <div key={val.id} className="space-y-2 p-6 bg-slate-50 rounded-xl border border-slate-100 italic">
+                                <h4 className="font-bold">{val.title}</h4>
+                                <p className="text-xs text-muted-foreground leading-relaxed">{val.description}</p>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        );
+
+        const renderHelp = () => (
+            <div className="space-y-12 animate-in fade-in duration-500">
+                <div className="bg-slate-50 py-16 px-8 text-center border-b">
+                    <h2 className="text-3xl font-bold mb-4" style={{ fontFamily: headingFont }}>¿Cómo podemos ayudarte?</h2>
+                    <div className="max-w-md mx-auto h-12 bg-white rounded-full border shadow-sm flex items-center px-4 gap-3">
+                        <div className="w-4 h-4 bg-slate-200 rounded-full" />
+                        <span className="text-sm text-muted-foreground">Escribe tu duda aquí...</span>
+                    </div>
+                </div>
+
+                <div className="p-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {helpCategories.map((cat: any) => (
+                            <div key={cat.id} className="p-6 bg-white border rounded-2xl shadow-sm hover:shadow-md transition-shadow group">
+                                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style={{ backgroundColor: `${primaryColor}15` }}>
+                                    <div className="w-6 h-6 bg-primary" style={{ backgroundColor: primaryColor, opacity: 0.5, borderRadius: '4px' }} />
+                                </div>
+                                <h3 className="font-bold mb-2">{cat.title}</h3>
+                                <p className="text-xs text-muted-foreground mb-4">{cat.description || "Información de ayuda..."}</p>
+                                <div className="h-0.5 w-full bg-slate-100" />
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="mt-16 max-w-2xl mx-auto space-y-6">
+                        <h3 className="text-xl font-bold text-center">Preguntas Frecuentes</h3>
+                        <div className="space-y-4">
+                            {helpFaqs.map((faq: any) => (
+                                <div key={faq.id} className="p-4 border rounded-xl bg-white">
+                                    <p className="font-bold text-sm mb-2">{faq.question}</p>
+                                    <p className="text-xs text-muted-foreground">{faq.answer || "Cargando respuesta..."}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+
         return (
             <div className="bg-white dark:bg-zinc-950 h-full flex flex-col font-sans" style={{ fontFamily: bodyFont }}>
                 {/* Announcement Bar */}
@@ -359,72 +567,9 @@ export default function DesignPage() {
                 </header>
 
                 <div className="flex-1 overflow-y-auto">
-                    {/* Hero */}
-                    {slides.length > 0 ? (
-                        <div className="aspect-[16/6] md:aspect-[21/9] bg-slate-100 relative overflow-hidden group">
-                            <img src={slides[0].image} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                            <div className={currentHero.containerRelative}>
-                                <div className={currentHero.container}>
-                                    <h2 className={`mb-2 text-white ${currentHero.title}`} style={{ fontFamily: headingFont }}>{slides[0].title}</h2>
-                                    <p className={`mb-4 text-white ${currentHero.subtitle}`}>{slides[0].subtitle}</p>
-                                    <button className={currentHero.button} style={template === 'bold' ? { backgroundColor: primaryColor, color: secondaryColor, borderColor: 'black' } : (template === 'modern' ? { backgroundColor: '#fff', color: '#000' } : {})}>
-                                        {slides[0].ctaText}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="h-64 bg-slate-100 flex items-center justify-center text-muted-foreground">Hero Banner</div>
-                    )}
-
-                    {/* Sections */}
-                    <div className="p-8 space-y-12">
-                        {/* Featured Categories Stub */}
-                        {homeSections.find(s => s.type === 'categories')?.enabled && (
-                            <div className="space-y-4">
-                                <div className="text-center">
-                                    <h3 className={currentCategory.title} style={{ fontFamily: headingFont }}>Categorías</h3>
-                                </div>
-                                <div className="flex gap-4 justify-center overflow-x-auto pb-4 scrollbar-hide">
-                                    {[1, 2, 3].map(i => (
-                                        <div key={i} className={currentCategory.card}>
-                                            <div className={currentCategory.img} />
-                                            <div className="h-3 w-16 bg-slate-200 rounded" />
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Featured Products */}
-                        {homeSections.find(s => s.type === 'featured-products')?.enabled && (
-                            <div className="space-y-4">
-                                <div className="text-center mb-6">
-                                    <h3 className={currentCategory.title} style={{ fontFamily: headingFont }}>Destacados</h3>
-                                </div>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                    {[1, 2, 3, 4].map(i => (
-                                        <div key={i} className={`${currentProduct.card} ${hoverEffect === 'zoom' ? 'hover:scale-[1.02]' : ''} transition-transform duration-300`}>
-                                            <div className="aspect-[3/4] bg-slate-100 relative">
-                                                {template === 'bold' && <div className="absolute top-2 left-2 bg-black text-white text-[10px] font-bold px-1 uppercase">New</div>}
-                                            </div>
-                                            <div className={currentProduct.info}>
-                                                <div className={`h-4 w-3/4 bg-slate-100 mb-2 rounded ${currentProduct.title}`} />
-                                                <div className="h-4 w-1/4 bg-slate-100 rounded" />
-
-                                                {template !== 'minimal' && (
-                                                    <div className={`mt-3 h-8 w-full bg-slate-900 rounded ${template === 'bold' ? 'rounded-none border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' : ''}`} />
-                                                )}
-                                                {template === 'minimal' && (
-                                                    <div className="mt-3 h-8 w-full border border-black rounded-none" />
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                    {previewPage === 'home' && renderHome()}
+                    {previewPage === 'about' && renderAbout()}
+                    {previewPage === 'help' && renderHelp()}
                 </div>
 
                 {/* Footer */}
@@ -484,11 +629,21 @@ export default function DesignPage() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
-                    <Tabs defaultValue="general" className="w-full">
+                    <Tabs
+                        value={activeTab}
+                        onValueChange={(v) => {
+                            setActiveTab(v);
+                            if (v === 'about') setPreviewPage('about');
+                            else if (v === 'advanced') setPreviewPage('help');
+                            else if (v === 'general' || v === 'content' || v === 'design') setPreviewPage('home');
+                        }}
+                        className="w-full"
+                    >
                         <div className="px-4 py-2 border-b bg-background sticky top-0 z-10 overflow-x-auto hide-scrollbar">
                             <TabsList className="h-9 w-max">
                                 <TabsTrigger value="general">General</TabsTrigger>
                                 <TabsTrigger value="content">Contenido</TabsTrigger>
+                                <TabsTrigger value="about">Nosotros</TabsTrigger>
                                 <TabsTrigger value="design">Diseño</TabsTrigger>
                                 <TabsTrigger value="advanced">Avanzado</TabsTrigger>
                             </TabsList>
@@ -711,6 +866,92 @@ export default function DesignPage() {
                                 </Card>
                             </TabsContent>
 
+                            {/* ABOUT PAGE TAB */}
+                            <TabsContent value="about" className="mt-0 space-y-6">
+                                <Card>
+                                    <CardHeader className="py-3 px-4">
+                                        <CardTitle className="text-sm flex items-center gap-2"><BookOpen className="w-3 h-3" /> Página "Nosotros"</CardTitle>
+                                        <CardDescription className="text-xs">Personaliza la historia y valores de tu marca.</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="p-4 space-y-4">
+                                        <div className="space-y-2">
+                                            <Label>Título Principal</Label>
+                                            <Input value={aboutTitle} onChange={(e) => setAboutTitle(e.target.value)} placeholder="Ej: Nuestra Historia" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Descripción / Historia</Label>
+                                            <Textarea value={aboutDescription} onChange={(e) => setAboutDescription(e.target.value)} placeholder="Cuéntale a tus clientes quiénes son..." />
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                                            <div className="space-y-2">
+                                                <Label>Nuestra Misión</Label>
+                                                <Textarea value={aboutMission} onChange={(e) => setAboutMission(e.target.value)} className="min-h-[100px]" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Nuestra Visión</Label>
+                                                <Textarea value={aboutVision} onChange={(e) => setAboutVision(e.target.value)} className="min-h-[100px]" />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-4 pt-4 border-t">
+                                            <Label>Imágenes para la página</Label>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <Label className="text-xs">Imagen Principal</Label>
+                                                    <Input value={aboutImage1} onChange={(e) => setAboutImage1(e.target.value)} placeholder="URL..." />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-xs">Imagen Secundaria</Label>
+                                                    <Input value={aboutImage2} onChange={(e) => setAboutImage2(e.target.value)} placeholder="URL..." />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                <Card>
+                                    <CardHeader className="py-3 px-4 flex flex-row items-center justify-between">
+                                        <div>
+                                            <CardTitle className="text-sm">Valores de Marca</CardTitle>
+                                            <CardDescription className="text-[10px]">Añade pilares que definan tu negocio.</CardDescription>
+                                        </div>
+                                        <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setAboutValues([...aboutValues, { id: Date.now().toString(), title: "Nuevo Valor", description: "Descripción corta" }])}>
+                                            <Plus className="h-3 h-3" />
+                                        </Button>
+                                    </CardHeader>
+                                    <CardContent className="p-4 space-y-3">
+                                        {aboutValues.map((val, idx) => (
+                                            <div key={val.id} className="p-3 border rounded-lg bg-muted/20 space-y-2">
+                                                <div className="flex justify-between items-center">
+                                                    <Input
+                                                        value={val.title}
+                                                        onChange={(e) => {
+                                                            const newVals = [...aboutValues];
+                                                            newVals[idx].title = e.target.value;
+                                                            setAboutValues(newVals);
+                                                        }}
+                                                        className="h-7 text-xs font-bold bg-transparent border-none p-0 focus-visible:ring-0"
+                                                    />
+                                                    <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => setAboutValues(aboutValues.filter((_, i) => i !== idx))}>
+                                                        <Trash2 className="h-3 w-3" />
+                                                    </Button>
+                                                </div>
+                                                <Textarea
+                                                    value={val.description}
+                                                    onChange={(e) => {
+                                                        const newVals = [...aboutValues];
+                                                        newVals[idx].description = e.target.value;
+                                                        setAboutValues(newVals);
+                                                    }}
+                                                    className="text-xs min-h-[60px]"
+                                                />
+                                            </div>
+                                        ))}
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
+
                             {/* ADVANCED TAB */}
                             <TabsContent value="advanced" className="mt-0 space-y-6">
                                 <div className="space-y-2">
@@ -723,6 +964,83 @@ export default function DesignPage() {
                                         placeholder=".product-card { border: 1px solid red; }"
                                     />
                                 </div>
+
+                                <div className="space-y-4 pt-4 border-t">
+                                    <h3 className="font-medium text-sm">Configuración de Checkout</h3>
+                                    <div className="flex justify-between items-center">
+                                        <div className="space-y-0.5">
+                                            <Label>Mini-Carrito (Drawer)</Label>
+                                            <p className="text-[10px] text-muted-foreground">Habilita el despliegue lateral del carrito.</p>
+                                        </div>
+                                        <Switch checked={allowCartDrawer} onCheckedChange={setAllowCartDrawer} />
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <div className="space-y-0.5">
+                                            <Label>Control de Stock</Label>
+                                            <p className="text-[10px] text-muted-foreground">Evita compras sobre el stock disponible.</p>
+                                        </div>
+                                        <Switch checked={showStockGuards} onCheckedChange={setShowStockGuards} />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label className="text-xs">Símbolo Moneda</Label>
+                                            <Input value={currencySymbol} onChange={(e) => setCurrencySymbol(e.target.value)} />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-xs">Monto Mínimo Compra</Label>
+                                            <Input type="number" value={minOrderAmount} onChange={(e) => setMinOrderAmount(Number(e.target.value))} />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4 pt-4 border-t">
+                                    <div className="flex justify-between items-center">
+                                        <h3 className="font-medium text-sm">Centro de Ayuda</h3>
+                                        <Switch checked={helpEnabled} onCheckedChange={setHelpEnabled} />
+                                    </div>
+
+                                    {helpEnabled && (
+                                        <div className="space-y-4">
+                                            <div className="p-3 border rounded-lg bg-muted/20">
+                                                <div className="flex justify-between items-center mb-2">
+                                                    <span className="text-xs font-bold">Categorías ({helpCategories.length})</span>
+                                                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setHelpCategories([...helpCategories, { id: Date.now().toString(), title: "Nueva Categoría", description: "", links: [] }])}>
+                                                        <Plus className="h-3 w-3" />
+                                                    </Button>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    {helpCategories.map((cat, idx) => (
+                                                        <div key={cat.id} className="text-[10px] p-2 bg-background border rounded flex justify-between items-center">
+                                                            <span>{cat.title}</span>
+                                                            <Button size="icon" variant="ghost" className="h-5 w-5 text-destructive" onClick={() => setHelpCategories(helpCategories.filter((_, i) => i !== idx))}>
+                                                                <Trash2 className="h-3 w-3" />
+                                                            </Button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            <div className="p-3 border rounded-lg bg-muted/20">
+                                                <div className="flex justify-between items-center mb-2">
+                                                    <span className="text-xs font-bold">FAQs ({helpFaqs.length})</span>
+                                                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setHelpFaqs([...helpFaqs, { id: Date.now().toString(), question: "Nueva Pregunta", answer: "" }])}>
+                                                        <Plus className="h-3 w-3" />
+                                                    </Button>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    {helpFaqs.map((faq, idx) => (
+                                                        <div key={faq.id} className="text-[10px] p-2 bg-background border rounded flex justify-between items-center">
+                                                            <span className="truncate w-40">{faq.question}</span>
+                                                            <Button size="icon" variant="ghost" className="h-5 w-5 text-destructive" onClick={() => setHelpFaqs(helpFaqs.filter((_, i) => i !== idx))}>
+                                                                <Trash2 className="h-3 w-3" />
+                                                            </Button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             </TabsContent>
                         </div>
                     </Tabs>
@@ -732,7 +1050,30 @@ export default function DesignPage() {
             {/* Right Preview */}
             <div className="flex-1 bg-muted/20 relative flex flex-col overflow-hidden">
                 {/* Preview Toolbar */}
-                <div className="h-12 border-b bg-white flex items-center justify-center gap-4 px-4">
+                <div className="h-12 border-b bg-white flex items-center justify-between gap-4 px-4 sticky top-0 z-30">
+                    <div className="flex items-center gap-2">
+                        <div className="flex bg-slate-100 p-1 rounded-md">
+                            <button
+                                onClick={() => setPreviewPage('home')}
+                                className={`px-3 py-1 text-[10px] font-bold rounded-sm transition-all ${previewPage === 'home' ? 'bg-white shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                            >
+                                Home
+                            </button>
+                            <button
+                                onClick={() => setPreviewPage('about')}
+                                className={`px-3 py-1 text-[10px] font-bold rounded-sm transition-all ${previewPage === 'about' ? 'bg-white shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                            >
+                                Nosotros
+                            </button>
+                            <button
+                                onClick={() => setPreviewPage('help')}
+                                className={`px-3 py-1 text-[10px] font-bold rounded-sm transition-all ${previewPage === 'help' ? 'bg-white shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                            >
+                                Ayuda
+                            </button>
+                        </div>
+                    </div>
+
                     <div className="flex bg-slate-100 p-1 rounded-md">
                         <button
                             onClick={() => setPreviewDevice('desktop')}

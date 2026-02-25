@@ -25,7 +25,7 @@ export default async function StoreLayout({
         return notFound();
     }
 
-    const store = docSnap.data() as Store;
+    const store = { ...docSnap.data(), id: docSnap.id } as Store;
 
     return (
         <div className="flex flex-col min-h-screen">

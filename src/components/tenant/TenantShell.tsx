@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, Package, Settings, LogOut, Store, ShoppingCart, Users, Megaphone, MapPin, ClipboardList, Menu, Palette, Truck, CreditCard, BarChart2, LayoutGrid, Globe, TrendingUp, Bell, Activity, AlertCircle, Search } from "lucide-react";
+import { LayoutDashboard, Package, Settings, LogOut, Store, ShoppingCart, Users, Megaphone, MapPin, ClipboardList, Menu, Palette, Truck, CreditCard, BarChart2, LayoutGrid, Globe, TrendingUp, Bell, Activity, AlertCircle, Search, Eye, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { auth, db } from "@/lib/firebase/config";
@@ -140,9 +140,18 @@ export function TenantShell({
                         )}
                     </span>
                 </NavLink>
+                <NavLink href="/tenant/categories" icon={LayoutGrid}>Categorías</NavLink>
                 <NavLink href="/tenant/inventory" icon={ClipboardList}>Inventario</NavLink>
                 <NavLink href="/tenant/orders" icon={ShoppingCart}>Órdenes</NavLink>
                 <NavLink href="/tenant/customers" icon={Users}>Clientes</NavLink>
+                <NavLink href="/tenant/messages" icon={MessageCircle}>
+                    <span className="flex items-center gap-2 w-full">
+                        Mensajes
+                        <span className="ml-auto bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                            Nuevo
+                        </span>
+                    </span>
+                </NavLink>
 
                 <div className="pt-4 pb-2">
                     <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -171,6 +180,22 @@ export function TenantShell({
                 <NavLink href="/tenant/reports" icon={TrendingUp}>Reportes</NavLink>
                 <NavLink href="/tenant/analytics" icon={BarChart2}>Analytics</NavLink>
                 <NavLink href="/tenant/billing" icon={CreditCard}>Facturación</NavLink>
+
+                <div className="pt-4 pb-2">
+                    <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        Tu Tienda Online
+                    </p>
+                </div>
+                <NavLink href="/tenant/design" icon={Palette}>Diseño & Personalización</NavLink>
+                {storeId && (
+                    <button
+                        onClick={() => window.open(`/${storeId}`, '_blank')}
+                        className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-gray-100 w-full"
+                    >
+                        <Eye className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                        Vista Previa
+                    </button>
+                )}
 
                 <div className="pt-4 pb-2">
                     <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -292,6 +317,10 @@ export function TenantShell({
                             <CommandItem onSelect={() => { router.push("/tenant/orders"); setOpen(false); }}>
                                 <ShoppingCart className="mr-2 h-4 w-4" />
                                 <span>Pedidos</span>
+                            </CommandItem>
+                            <CommandItem onSelect={() => { router.push("/tenant/categories"); setOpen(false); }}>
+                                <LayoutGrid className="mr-2 h-4 w-4" />
+                                <span>Categorías</span>
                             </CommandItem>
                             <CommandItem onSelect={() => { router.push("/tenant/shipping"); setOpen(false); }}>
                                 <Truck className="mr-2 h-4 w-4" />

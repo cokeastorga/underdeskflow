@@ -8,8 +8,9 @@ import { PromoBanner } from "@/components/store/PromoBanner";
 import { ProductGrid } from "@/components/store/products/ProductGrid";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { FadeIn } from "@/components/ui/fade-in";
-import { ArrowRight, Mail } from "lucide-react";
+import { MotionWrapper } from "@/components/ui/motion-wrapper";
+import { Newsletter } from "@/components/store/Newsletter";
+import { ArrowRight } from "lucide-react";
 
 interface Props {
   params: Promise<{ storeId: string }>;
@@ -67,12 +68,31 @@ async function getNewArrivals(storeId: string) {
   }
 }
 
+async function getCategories(storeId: string) {
+  try {
+    const q = query(
+      collection(db, "categories"),
+      where("storeId", "==", storeId),
+      limit(6)
+    );
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as any[];
+  } catch (error) {
+    console.error("Failed to fetch categories:", error);
+    return [];
+  }
+}
+
 export const revalidate = 60;
 
 export default async function StorePage({ params }: Props) {
   const resolvedParams = await params;
   const storeId = resolvedParams.storeId;
   const storeConfig = await getStoreConfig(storeId);
+  const categories = await getCategories(storeId);
   const featuredProducts = await getFeaturedProducts(storeId);
   const newArrivals = await getNewArrivals(storeId);
 
@@ -90,10 +110,10 @@ export default async function StorePage({ params }: Props) {
   const renderSection = (section: any) => {
     if (!section.enabled) return null;
 
-    const SectionWrapper = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
-      <FadeIn duration={1000} className={className}>
+    const SectionWrapper = ({ children, className = "", noContainer = false }: { children: React.ReactNode; className?: string; noContainer?: boolean }) => (
+      <MotionWrapper className={`${noContainer ? "" : "container mx-auto px-4"} ${className}`}>
         {children}
-      </FadeIn>
+      </MotionWrapper>
     );
 
     switch (section.type) {
@@ -107,27 +127,30 @@ export default async function StorePage({ params }: Props) {
       case "categories":
         return (
           <SectionWrapper key={section.id}>
-            <CategoryNav storeId={storeId} template={currentTemplate} />
+            <CategoryNav storeId={storeId} categories={categories} template={currentTemplate} />
           </SectionWrapper>
         );
 
       case "featured-products":
         return (
-          <SectionWrapper key={section.id} className="py-24 container bg-white data-[template=modern]:bg-gray-50/50" data-template={currentTemplate}>
-            <div className="flex items-center justify-between mb-12">
-              <h2 className={`text-4xl font-bold ${currentTemplate === 'bold' ? 'uppercase font-black text-5xl tracking-tighter' : (currentTemplate === 'minimal' ? 'font-light uppercase tracking-[0.2em]' : 'font-serif')}`} style={{ fontFamily: storeConfig?.design?.typography?.headingFont }}>
-                {section.title || "Selected for You"}
-              </h2>
-              <Link href={`/${storeId}/products`} className={`group flex items-center gap-2 text-sm font-medium ${currentTemplate === 'bold' ? 'uppercase font-black bg-black text-white px-4 py-2 hover:bg-primary hover:text-black transition-colors' : 'hover:text-primary transition-colors'}`}>
-                View All Products <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+          <SectionWrapper key={section.id} className="py-24 bg-white" data-template={currentTemplate}>
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-16 text-center md:text-left">
+              <div className="space-y-2">
+                <h2 className={`text-4xl md:text-6xl font-bold ${currentTemplate === 'bold' ? 'uppercase font-black tracking-tighter' : (currentTemplate === 'minimal' ? 'font-light uppercase tracking-[0.2em]' : 'font-serif')}`} style={{ fontFamily: storeConfig?.design?.typography?.headingFont }}>
+                  {section.title || "Selección Exclusiva"}
+                </h2>
+                <div className="h-1 w-20 bg-primary mx-auto md:mx-0 rounded-full" />
+              </div>
+              <Link href={`/${storeId}/products`} className={`group flex items-center gap-2 text-sm font-bold tracking-widest uppercase transition-all ${currentTemplate === 'bold' ? 'bg-black text-white px-8 py-4 hover:bg-primary hover:text-black' : 'hover:text-primary'}`}>
+                Ver Todo <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
               </Link>
             </div>
             {featuredProducts.length > 0 ? (
-              <ProductGrid products={featuredProducts} template={currentTemplate} />
+              <ProductGrid products={featuredProducts} storeId={storeId} template={currentTemplate} staggered={true} />
             ) : (
-              <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed rounded-xl">
-                <p className="text-muted-foreground text-lg mb-4">New collection arriving soon.</p>
-                <Button variant="outline">Browse All Categories</Button>
+              <div className="flex flex-col items-center justify-center py-20 text-center border-2 border-dashed border-gray-100 rounded-3xl">
+                <p className="text-muted-foreground text-lg mb-6 max-w-sm">Nuestra nueva colección llegará pronto. Suscríbete para ser el primero en saber.</p>
+                <Button variant="outline" className="rounded-full px-8">Explorar Categorías</Button>
               </div>
             )}
           </SectionWrapper>
@@ -169,33 +192,12 @@ export default async function StorePage({ params }: Props) {
 
       case "newsletter":
         return (
-          <FadeIn key={section.id} duration={1200} className="relative py-32 overflow-hidden bg-black text-white isolate">
-            {/* Background Texture/Image */}
-            <div className="absolute inset-0 -z-10 opacity-20">
-              <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center mix-blend-overlay" />
-            </div>
-
-            <div className="container relative z-10 flex flex-col items-center text-center max-w-2xl mx-auto space-y-8">
-              <Mail className="w-12 h-12 mb-4 text-white/80" strokeWidth={1} />
-              <h2 className={`text-4xl md:text-5xl font-bold ${currentTemplate === 'bold' ? 'uppercase tracking-tighter font-black' : 'font-serif tracking-tight'}`} style={{ fontFamily: storeConfig?.design?.typography?.headingFont }}>
-                {section.title || "Join the Inner Circle"}
-              </h2>
-              <p className="text-lg text-white/70 font-light max-w-md">
-                Subscribe to receive early access to new collections, exclusive events, and luxury offers.
-              </p>
-              <div className="flex w-full max-w-md gap-2">
-                <input
-                  type="email"
-                  placeholder="Enter your email address"
-                  className="flex-1 bg-white/10 border border-white/20 rounded-none px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:border-white transition-colors"
-                />
-                <Button size="lg" className={`rounded-none px-8 ${currentTemplate === 'bold' ? 'bg-primary text-primary-foreground font-black uppercase' : 'bg-white text-black hover:bg-white/90'}`}>
-                  Subscribe
-                </Button>
-              </div>
-              <p className="text-xs text-white/40 uppercase tracking-widest mt-8">By subscribing you agree to our Terms & Privacy Policy</p>
-            </div>
-          </FadeIn>
+          <Newsletter
+            key={section.id}
+            title={section.title}
+            template={currentTemplate}
+            headingFont={storeConfig?.design?.typography?.headingFont}
+          />
         );
 
       default:
