@@ -11,20 +11,30 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
-    /** The storeId associated with the calling user */
     function getUserStoreId() {
       return userDoc().storeId;
     }
 
-    /** How many stores the user currently owns */
     function getUserStoreCount() {
       return userDoc().get("storeCount", 0);
     }
 
-    /** Max stores allowed by the user's plan */
     function maxStoresForPlan() {
       let plan = userDoc().get("plan", "basic");
       return plan == "enterprise" ? 20 : (plan == "pro" ? 5 : 1);
+    }
+
+    // ── RBAC Permission helpers ─────────────────────────
+    // Permissions are stored as a string array in the ID token 'permissions' claim.
+
+    function hasPermission(perm) {
+      let isSystemAdmin = request.auth.token.get("posRole", "") == "admin";
+      let permsList = request.auth.token.get("permissions", []);
+      return isSystemAdmin || (perm in permsList);
+    }
+
+    function isOwner(storeId) {
+      return request.auth != null && getUserStoreId() == storeId;
     }
 
     // ─────────────────────────────────────────────
@@ -40,22 +50,80 @@ service cloud.firestore {
     // ─────────────────────────────────────────────
 
     match /stores/{storeId} {
-      // Create: authenticated + within plan store limit
       allow create: if request.auth != null
         && request.resource.data.ownerId == request.auth.uid
         && getUserStoreCount() < maxStoresForPlan();
 
-      // Read / Update: owner only
       allow read, update: if request.auth != null
         && resource.data.ownerId == request.auth.uid;
 
-      // Delete: owner only
       allow delete: if request.auth != null
         && resource.data.ownerId == request.auth.uid;
+
+      // ── Store subcollections ──────────────────
+
+      // Orders: owner full access; cashier can create POS orders, cannot delete
+      match /orders/{orderId} {
+        allow read: if isOwner(storeId) || hasPermission("pos_access");
+        allow create: if isOwner(storeId) || hasPermission("pos_access");
+        allow update: if isOwner(storeId) || hasPermission("void_sale") || hasPermission("refund_payment");
+        allow delete: if isOwner(storeId); // staff cannot delete
+      }
+
+      // Products: owner full access; cashier read-only (for POS grid)
+      match /products/{productId} {
+        allow read: if isOwner(storeId) || hasPermission("pos_access") || true; // public for storefront
+        allow write: if isOwner(storeId);
+      }
+
+      // Categories: public read
+      match /categories/{catId} {
+        allow read: if true;
+        allow write: if isOwner(storeId);
+      }
+
+      // Cash sessions: owner full; cashier creates/reads own, manager closes any
+      match /cash_sessions/{sessionId} {
+        allow read: if isOwner(storeId) || hasPermission("pos_access");
+        allow create: if isOwner(storeId) || hasPermission("pos_access");
+        allow update: if isOwner(storeId) || hasPermission("manage_settings");
+        allow delete: if isOwner(storeId);
+      }
+
+      // Integrations metadata (SumUp, etc): owner only
+      match /integrations/{integrationId} {
+        allow read: if isOwner(storeId) || hasPermission("manage_settings");
+        allow write: if isOwner(storeId);
+      }
+
+      // General catch-all for other store subcollections
+      match /{subcollection}/{docId} {
+        allow read, write: if isOwner(storeId);
+      }
     }
 
     // ─────────────────────────────────────────────
-    // PRODUCTS (public read for storefronts)
+    // POS SALE INDEX (idempotency)
+    // ─────────────────────────────────────────────
+
+    match /pos_sale_index/{clientSaleId} {
+      // Only server-side writes (API routes) should touch this
+      allow read: if false;
+      allow write: if false;
+    }
+
+    // ─────────────────────────────────────────────
+    // ANALYTICS DAILY
+    // ─────────────────────────────────────────────
+
+    match /analytics_daily/{docId} {
+      // Server writes only; owners can read their own analytics
+      allow read: if request.auth != null && resource.data.storeId == getUserStoreId();
+      allow write: if false; // server-side only
+    }
+
+    // ─────────────────────────────────────────────
+    // PRODUCTS (global, public read for storefronts)
     // ─────────────────────────────────────────────
 
     match /products/{productId} {
@@ -67,63 +135,7 @@ service cloud.firestore {
     }
 
     // ─────────────────────────────────────────────
-    // CATEGORIES (public read for storefronts)
-    // ─────────────────────────────────────────────
-
-    match /categories/{catId} {
-      allow read: if true;
-      allow create: if request.auth != null
-        && request.resource.data.storeId == getUserStoreId();
-      allow update, delete: if request.auth != null
-        && resource.data.storeId == getUserStoreId();
-    }
-
-    // ─────────────────────────────────────────────
-    // LOCATIONS — owner only
-    // ─────────────────────────────────────────────
-
-    match /locations/{locId} {
-      allow read, update, delete: if request.auth != null
-        && resource.data.storeId == getUserStoreId();
-      allow create: if request.auth != null
-        && request.resource.data.storeId == getUserStoreId();
-    }
-
-    // ─────────────────────────────────────────────
-    // VEHICLES — owner only
-    // ─────────────────────────────────────────────
-
-    match /vehicles/{vehicleId} {
-      allow read, update, delete: if request.auth != null
-        && resource.data.storeId == getUserStoreId();
-      allow create: if request.auth != null
-        && request.resource.data.storeId == getUserStoreId();
-    }
-
-    // ─────────────────────────────────────────────
-    // DRIVERS — owner only
-    // ─────────────────────────────────────────────
-
-    match /drivers/{driverId} {
-      allow read, update, delete: if request.auth != null
-        && resource.data.storeId == getUserStoreId();
-      allow create: if request.auth != null
-        && request.resource.data.storeId == getUserStoreId();
-    }
-
-    // ─────────────────────────────────────────────
-    // SHIPPING ZONES — owner only
-    // ─────────────────────────────────────────────
-
-    match /shippingZones/{zoneId} {
-      allow read, update, delete: if request.auth != null
-        && resource.data.storeId == getUserStoreId();
-      allow create: if request.auth != null
-        && request.resource.data.storeId == getUserStoreId();
-    }
-
-    // ─────────────────────────────────────────────
-    // ORDERS (owner store only)
+    // ORDERS (global, owner store only)
     // ─────────────────────────────────────────────
 
     match /orders/{orderId} {
@@ -134,14 +146,45 @@ service cloud.firestore {
     }
 
     // ─────────────────────────────────────────────
-    // SUBSCRIPTIONS — owner only
+    // SUBSCRIPTIONS — owner only, server writes
     // ─────────────────────────────────────────────
 
     match /subscriptions/{subId} {
       allow read: if request.auth != null
         && resource.data.ownerId == request.auth.uid;
-      // Writes handled server-side only (no client writes)
       allow write: if false;
+    }
+
+    // ─────────────────────────────────────────────
+    // OTHER COLLECTIONS: owner store match
+    // ─────────────────────────────────────────────
+
+    match /locations/{locId} {
+      allow read, update, delete: if request.auth != null
+        && resource.data.storeId == getUserStoreId();
+      allow create: if request.auth != null
+        && request.resource.data.storeId == getUserStoreId();
+    }
+
+    match /vehicles/{vehicleId} {
+      allow read, update, delete: if request.auth != null
+        && resource.data.storeId == getUserStoreId();
+      allow create: if request.auth != null
+        && request.resource.data.storeId == getUserStoreId();
+    }
+
+    match /drivers/{driverId} {
+      allow read, update, delete: if request.auth != null
+        && resource.data.storeId == getUserStoreId();
+      allow create: if request.auth != null
+        && request.resource.data.storeId == getUserStoreId();
+    }
+
+    match /shippingZones/{zoneId} {
+      allow read, update, delete: if request.auth != null
+        && resource.data.storeId == getUserStoreId();
+      allow create: if request.auth != null
+        && request.resource.data.storeId == getUserStoreId();
     }
   }
 }

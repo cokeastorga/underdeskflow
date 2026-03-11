@@ -43,10 +43,9 @@ export async function POST(req: Request) {
         const sumupService = new SumUpService(apiKey);
 
         // 5. Fetch and Normalize Transactions
-        // We fetch raw first to have more control or debugging if needed, 
-        // but service has normalize=true by default.
-        // Let's use the public method that returns Partial<Order>[]
-        const transactions = await sumupService.getTransactions(100, true);
+        // getTransactions now returns a PaginatedTransactions object
+        const result = await sumupService.getTransactions(100, 0);
+        const transactions = result.items;
 
         // 6. Save to Firestore
         const batch = adminDb.batch();
@@ -55,12 +54,6 @@ export async function POST(req: Request) {
         let importedCount = 0;
         let duplicateCount = 0;
         let errorCount = 0;
-
-        // Check for existing orders to avoid duplicates
-        // We can query by orderNumber (which is transaction_code) and storeId
-        // But doing this for 100 items might be slow if we do one by one.
-        // For 100 items, one by one is acceptable or `where in` chunks.
-        // Let's do one by one for simplicity and robustness in this v1.
 
         for (const tx of transactions) {
             try {
@@ -73,7 +66,7 @@ export async function POST(req: Request) {
                     customerId: decodedToken.uid // Link to importing user as customer? Or keep generic?
                     // actually customerId should probably be the buyer, but we don't know them.
                     // So lets leave customerId undefined or "guest"
-                } as Order;
+                } as unknown as Order;
 
                 // Check duplicate
                 // Assuming orderNumber is unique per store from SumUp

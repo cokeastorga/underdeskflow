@@ -283,10 +283,6 @@ export default function ChannelsPage() {
 
     return (
         <div className="p-6 max-w-5xl mx-auto space-y-8">
-            {/* SumUp Migration Section (Internal tool for catalogue import) */}
-            <div className="mb-8">
-                <SumUpMigration storeId={storeId} />
-            </div>
             {/* Header */}
             <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div>

@@ -82,7 +82,7 @@ export default function CheckoutSuccessPage() {
 
                 const orderData = { id: orderSnap.id, ...orderSnap.data() } as Order;
 
-                if (orderData.status === "pending") {
+                if (orderData.status === "open" && orderData.paymentStatus === "pending") {
 
                     // IF Transfer: Keep as pending, just sync customer and decrement stock (reservation)
                     // IF Online Payment: Update to Paid
@@ -91,7 +91,6 @@ export default function CheckoutSuccessPage() {
 
                     if (!isManual) {
                         await updateDoc(orderRef, {
-                            status: 'paid',
                             paymentStatus: 'paid',
                             updatedAt: Date.now()
                         });
@@ -105,7 +104,12 @@ export default function CheckoutSuccessPage() {
 
                     // Decrement Stock (Always - Reserve stock)
                     if (orderData.items) {
-                        await decrementStock(orderData.items);
+                        await decrementStock(orderData.items, {
+                            storeId: params.storeId as string,
+                            referenceId: orderSnap.id,
+                            actor: "customer_checkout",
+                            notes: "Online order stock reservation"
+                        });
                     }
                 }
 

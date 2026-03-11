@@ -143,12 +143,18 @@ export default function CheckoutPage() {
         setLoading(true);
         try {
             const orderData = {
-                orderNumber: `#${Math.floor(100000 + Math.random() * 900000)}`,
+                orderNumber: `#${Math.floor(100000 + Math.random() * 900000)}`, // Optional UI helper
                 storeId,
+                channel: "online",
+                status: "open",
+                paymentStatus: "pending",
+                fulfillmentStatus: "unfulfilled",
+                
                 customerName: `${formData.get('firstName')} ${formData.get('lastName')}`,
                 email: formData.get('email'),
                 phone: formData.get('phone') || '',
                 rut: formData.get('rut') || rut,
+                
                 items: storeItems.map(item => ({
                     productId: item.id,
                     variantId: item.selectedVariantId || null,
@@ -160,10 +166,15 @@ export default function CheckoutPage() {
                     sku: item.sku || '',
                     category: item.category || ''
                 })),
-                subtotal,
-                discountAmount,
-                total,
-                status: 'pending',
+                
+                totals: {
+                    subtotal,
+                    discount: discountAmount,
+                    tax: 0,
+                    shipping: shippingFee,
+                    total
+                },
+                
                 paymentMethod,
                 deliveryMethod,
                 shippingAddress: deliveryMethod === 'shipping' ? {
@@ -175,10 +186,14 @@ export default function CheckoutPage() {
                     phone: formData.get('phone') as string,
                 } : null,
                 shippingCarrier: deliveryMethod === 'shipping' ? selectedCarrier : null,
-                shippingCost: shippingFee,
                 locationId: deliveryMethod === 'pickup' ? selectedLocationId : null,
-                createdAt: Date.now(),
+                
+                audit: {
+                    createdBy: "customer_checkout"
+                },
                 couponId: appliedCoupon?.id || null,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
             };
 
             const docRef = await addDoc(collection(db, "orders"), orderData);
@@ -207,14 +222,19 @@ export default function CheckoutPage() {
         if (paymentMethod === "card" || paymentMethod === "wallet") {
             setLoading(true);
             try {
-                // 1. Create the order first (as pending)
                 const orderData = {
                     orderNumber: `#${Math.floor(100000 + Math.random() * 900000)}`,
                     storeId,
+                    channel: "online",
+                    status: "open",
+                    paymentStatus: "pending",
+                    fulfillmentStatus: "unfulfilled",
+                    
                     customerName: `${formData.get('firstName')} ${formData.get('lastName')}`,
                     email: formData.get('email'),
                     phone: formData.get('phone') || '',
                     rut: formData.get('rut') || rut,
+                    
                     items: storeItems.map(item => ({
                         productId: item.id,
                         variantId: item.selectedVariantId || null,
@@ -226,10 +246,15 @@ export default function CheckoutPage() {
                         sku: item.sku || '',
                         category: item.category || ''
                     })),
-                    subtotal,
-                    discountAmount,
-                    total,
-                    status: 'pending',
+                    
+                    totals: {
+                        subtotal,
+                        discount: discountAmount,
+                        tax: 0,
+                        shipping: shippingFee,
+                        total
+                    },
+                    
                     paymentMethod,
                     provider: selectedProvider,
                     deliveryMethod,
@@ -242,10 +267,14 @@ export default function CheckoutPage() {
                         phone: formData.get('phone') as string,
                     } : null,
                     shippingCarrier: deliveryMethod === 'shipping' ? selectedCarrier : null,
-                    shippingCost: shippingFee,
                     locationId: deliveryMethod === 'pickup' ? selectedLocationId : null,
-                    createdAt: Date.now(),
+                    
+                    audit: {
+                        createdBy: "customer_checkout"
+                    },
                     couponId: appliedCoupon?.id || null,
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
                 };
 
                 const orderRef = await addDoc(collection(db, "orders"), orderData);

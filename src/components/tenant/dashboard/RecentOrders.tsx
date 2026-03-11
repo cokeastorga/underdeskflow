@@ -110,12 +110,12 @@ export function RecentOrders() {
                                     </TableCell>
                                     <TableCell>{order.customerName}</TableCell>
                                     <TableCell>
-                                        <Badge variant={order.status === 'paid' ? 'default' : 'outline'} className="text-xs">
+                                        <Badge variant={order.status === 'completed' ? 'default' : 'outline'} className="text-xs">
                                             {order.status}
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-right font-medium">
-                                        {new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(order.total)}
+                                        {new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(order.totals?.total || 0)}
                                     </TableCell>
                                 </TableRow>
                             ))

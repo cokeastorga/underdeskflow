@@ -1,4 +1,8 @@
-import { Order, OrderStatus, PaymentStatus } from "@/types";
+import { Order, OrderStatus, PaymentStatus, FulfillmentStatus } from "@/types";
+
+// ────────────────────────────────────────────────────────────────
+// Types
+// ────────────────────────────────────────────────────────────────
 
 export interface SumUpTransaction {
     id: string;
@@ -6,7 +10,7 @@ export interface SumUpTransaction {
     amount: number;
     currency: string;
     timestamp: string;
-    status: 'SUCCESSFUL' | 'CANCELLED' | 'FAILED' | 'PENDING';
+    status: "SUCCESSFUL" | "CANCELLED" | "FAILED" | "PENDING";
     payment_type: string;
     installments_count: number;
     merchant_code: string;
@@ -17,6 +21,14 @@ export interface SumUpTransaction {
     internal_id: number;
 }
 
+export interface SumUpMerchantProfile {
+    merchant_code: string;
+    company_name: string;
+    currency: string;
+    country: string;
+    username: string;
+}
+
 export interface MigrationResult {
     total: number;
     imported: number;
@@ -25,6 +37,17 @@ export interface MigrationResult {
     errors: string[];
 }
 
+export interface PaginatedTransactions {
+    items: SumUpTransaction[];
+    total: number;
+    hasMore: boolean;
+    offset: number;
+}
+
+// ────────────────────────────────────────────────────────────────
+// Service
+// ────────────────────────────────────────────────────────────────
+
 export class SumUpService {
     private apiKey: string;
 
@@ -32,74 +55,111 @@ export class SumUpService {
         this.apiKey = apiKey;
     }
 
-    async getTransactions(limit: number = 100, normalize: boolean = true): Promise<any[]> {
-        const response = await fetch(`https://api.sumup.com/v0.1/me/transactions/history?limit=${limit}&order=descending`, {
-            headers: {
-                'Authorization': `Bearer ${this.apiKey}`,
-                'Content-Type': 'application/json'
-            }
+    private get headers() {
+        return {
+            Authorization: `Bearer ${this.apiKey}`,
+            "Content-Type": "application/json",
+        };
+    }
+
+    /** Validate the API key and retrieve merchant profile. */
+    async getMerchantProfile(): Promise<SumUpMerchantProfile> {
+        const response = await fetch("https://api.sumup.com/v0.1/me", {
+            headers: this.headers,
         });
+        if (!response.ok) {
+            throw new Error(`SumUp Auth Error: ${response.status} ${response.statusText}`);
+        }
+        return response.json();
+    }
+
+    /**
+     * Fetch a paginated page of transaction history.
+     * SumUp API limit is 100 items max per request.
+     * Always returns raw SumUpTransaction items.
+     */
+    async getTransactions(
+        limit: number = 20,
+        offset: number = 0
+    ): Promise<PaginatedTransactions> {
+        const clampedLimit = Math.min(limit, 100);
+        const response = await fetch(
+            `https://api.sumup.com/v0.1/me/transactions/history?limit=${clampedLimit}&offset=${offset}&order=descending`,
+            { headers: this.headers }
+        );
 
         if (!response.ok) {
-            throw new Error(`SumUp API Error: ${response.statusText}`);
+            throw new Error(`SumUp API Error: ${response.status} ${response.statusText}`);
         }
 
         const data = await response.json();
-        const transactions = data.items || []; // SumUp returns { items: [...] } usually, or just array? Docs say array but checking wrapper is safer.
-        // Actually checking docs again, usually it returns an array of transactions for history endpoint directly?
-        // Let's assume array for now based on snippet, but handle wrapper if needed.
-        // The list API usually returns { items: [...] } or just [...]
-        // Let's safe check.
-        const items = Array.isArray(data) ? data : (data.items || []);
+        // SumUp returns either an array or { items: [...] }
+        const rawItems: SumUpTransaction[] = Array.isArray(data)
+            ? data
+            : (data.items ?? []);
 
-        return normalize ? items.map(this.normalizeTransaction) : items;
+        return {
+            items: rawItems,
+            total: data.total ?? rawItems.length,
+            hasMore: rawItems.length === clampedLimit,
+            offset: offset + rawItems.length,
+        };
     }
 
-    private normalizeTransaction(tx: SumUpTransaction): Partial<Order> {
+    /** Normalize a SumUp transaction into our Order shape. */
+    normalizeTransaction(tx: SumUpTransaction, storeId?: string): Partial<Order> {
         const date = new Date(tx.timestamp);
 
-        // Map SumUp status to our status
-        let status: OrderStatus = 'pending';
-        let paymentStatus: PaymentStatus = 'pending';
+        let status: OrderStatus = "open";
+        let paymentStatus: PaymentStatus = "pending";
+        let fulfillmentStatus: FulfillmentStatus = "unfulfilled";
 
-        if (tx.status === 'SUCCESSFUL') {
-            status = 'delivered'; // Assume completed transaction is delivered for migration purposes
-            paymentStatus = 'paid';
-        } else if (tx.status === 'CANCELLED') {
-            status = 'cancelled';
-            paymentStatus = 'refunded'; // or failed
-        } else if (tx.status === 'FAILED') {
-            status = 'cancelled';
-            paymentStatus = 'failed';
+        if (tx.status === "SUCCESSFUL") {
+            status = "completed";
+            paymentStatus = "paid";
+            fulfillmentStatus = "fulfilled";
+        } else if (tx.status === "CANCELLED") {
+            status = "cancelled";
+            paymentStatus = "refunded";
+        } else if (tx.status === "FAILED") {
+            status = "cancelled";
+            paymentStatus = "refunded";
         }
 
         return {
             orderNumber: tx.transaction_code,
-            total: tx.amount,
-            subtotal: tx.amount, // VAT handling might be needed if included
-            tax: tx.vat_amount || 0,
-            shippingCost: 0,
+            channel: "pos",
+            totals: {
+                total: tx.amount,
+                subtotal: tx.amount,
+                tax: tx.vat_amount || 0,
+                shipping: 0,
+                discount: 0
+            },
             status,
             paymentStatus,
+            fulfillmentStatus,
             paymentMethod: `sumup_${tx.payment_type}`,
+            storeId,
             createdAt: date.getTime(),
             updatedAt: date.getTime(),
-            // Mock items since SumUp transaction list doesn't have line items usually
-            items: [{
-                productId: 'migration_placeholder',
-                name: 'Imported Transaction',
-                price: tx.amount,
-                quantity: 1
-            }],
-            customerName: 'Guest (SumUp)',
-            email: '',
+            items: [
+                {
+                    productId: "migration_placeholder",
+                    name: "Imported Transaction",
+                    price: tx.amount,
+                    quantity: 1,
+                },
+            ],
+            customerName: "Guest (SumUp)",
+            email: "",
             shippingAddress: {
-                address: 'SumUp Point of Sale',
-                city: '',
-                country: '',
-                zip: '',
-                phone: ''
-            }
+                address: "SumUp Point of Sale",
+                city: "",
+                country: "",
+                zip: "",
+                phone: "",
+            },
         };
     }
 }

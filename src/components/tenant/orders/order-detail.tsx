@@ -84,7 +84,8 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
                     <div>
                         <h2 className="text-3xl font-bold tracking-tight">{order.orderNumber}</h2>
                         <p className="text-muted-foreground">
-                            {format(order.createdAt, "dd/MM/yyyy HH:mm")} • {order.shippingAddress.firstName} {order.shippingAddress.lastName}
+                            {format(order.createdAt, "dd/MM/yyyy HH:mm")} 
+                            {order.shippingAddress ? ` • ${order.shippingAddress.firstName} ${order.shippingAddress.lastName}` : ` • ${order.customerName}`}
                         </p>
                     </div>
                 </div>
@@ -101,11 +102,8 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
                             <SelectValue placeholder="Estado" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="pending">Pendiente</SelectItem>
-                            <SelectItem value="paid">Pagado</SelectItem>
-                            <SelectItem value="processing">Procesando</SelectItem>
-                            <SelectItem value="shipped">Enviado</SelectItem>
-                            <SelectItem value="delivered">Entregado</SelectItem>
+                            <SelectItem value="open">Abierto / Pendiente</SelectItem>
+                            <SelectItem value="completed">Completado</SelectItem>
                             <SelectItem value="cancelled">Cancelado</SelectItem>
                         </SelectContent>
                     </Select>
@@ -149,15 +147,15 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
                             <div className="space-y-1.5 text-sm">
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">Subtotal</span>
-                                    <span>${order.subtotal.toLocaleString("es-CL")}</span>
+                                    <span>${(order.totals?.subtotal || 0).toLocaleString("es-CL")}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">Envío</span>
-                                    <span>${order.shippingCost.toLocaleString("es-CL")}</span>
+                                    <span>${(order.totals?.shipping || 0).toLocaleString("es-CL")}</span>
                                 </div>
                                 <div className="flex justify-between font-bold text-base pt-2">
                                     <span>Total</span>
-                                    <span>${order.total.toLocaleString("es-CL")}</span>
+                                    <span>${(order.totals?.total || 0).toLocaleString("es-CL")}</span>
                                 </div>
                             </div>
                         </CardContent>
@@ -175,19 +173,23 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
                                 <Mail className="h-4 w-4 text-muted-foreground" />
                                 <a href={`mailto:${order.email}`} className="hover:underline">{order.email}</a>
                             </div>
-                            <Separator />
-                            <div>
-                                <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
-                                    <Truck className="h-4 w-4" /> Dirección de Envío
-                                </h4>
-                                <address className="not-italic text-sm text-muted-foreground">
-                                    {order.shippingAddress.firstName} {order.shippingAddress.lastName}<br />
-                                    {order.shippingAddress.address}<br />
-                                    {order.shippingAddress.city}, {order.shippingAddress.zip}<br />
-                                    {order.shippingAddress.country}<br />
-                                    {order.shippingAddress.phone}
-                                </address>
-                            </div>
+                            {order.shippingAddress && (
+                                <>
+                                    <Separator />
+                                    <div>
+                                        <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                                            <Truck className="h-4 w-4" /> Dirección de Envío
+                                        </h4>
+                                        <address className="not-italic text-sm text-muted-foreground">
+                                            {order.shippingAddress.firstName} {order.shippingAddress.lastName}<br />
+                                            {order.shippingAddress.address}<br />
+                                            {order.shippingAddress.city}{order.shippingAddress.zip ? `, ${order.shippingAddress.zip}` : ''}<br />
+                                            {order.shippingAddress.country || 'Chile'}<br />
+                                            {order.shippingAddress.phone}
+                                        </address>
+                                    </div>
+                                </>
+                            )}
                             <Separator />
                             <div>
                                 <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">

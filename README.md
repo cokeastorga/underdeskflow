@@ -1,42 +1,32 @@
 # UnderDesk Flow (UDF)
-> Infraestructura operativa invisible para el comercio digital.
+> Infraestructura operativa invisible para el comercio digital y físico.
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+UnderDesk Flow (UDF) es una plataforma SaaS B2B multi-tenant diseñada para unificar la gestión operativa de retail omnicanal. Consolida ventas online, ventas físicas (Punto de Venta - POS), control de inventario y conciliación de pagos en un solo sistema financiero basado en partida doble (Ledger).
 
-## Getting Started
+## 🚀 Módulos Principales
 
-First, run the development server:
+### 🖥️ Punto de Venta (POS) Híbrido
+- Interfaz optimizada para cajeros con soporte táctil.
+- Tolerancia a desconexiones (Offline-first mediante Dexie.js).
+- Sincronización automática de órdenes encoladas al reconectar (Outbox pattern).
+- Integración nativa con equipos POS de **SumUp** (Manejo de keys seguras vía Secret Manager).
+- Gestión de restaurantes: Mapa de mesas, apertura manual de cuentas, cobro híbrido, y sistema de comandas impresas hacia cocina vía **TCP/IP nativo protocolo ESC/POS (puerto 9100)**.
+- Arqueos de caja y control estricto de sesiones por turno.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### 💰 Motor Financiero (Ledger)
+- Doble-partida real. Toda transacción afecta un "Debit" y "Credit".
+- Cobros y conciliaciones automáticas unificadas desde Múltiples PSPs (MercadoPago, Flow, Stripe, SumUp).
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 📦 Sincronizador de Inventario y Canales
+- Bus de eventos para conciliación de stock omnicanal (Shopify, MercadoLibre).
+- Notificación proactiva y consolidación de quiebres de stock.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🛠️ Stack Tecnológico
+- **Frontend/Backend:** Next.js 14+ (App Router, Server Actions) + React 18 + TailwindCSS.
+- **Base de datos:** Firebase Firestore (NoSQL) con soporte para subcolecciones aisladas por tenant.
+- **Seguridad:** Firebase Auth (Custom Tokens y Session Cookies) + Google Secret Manager para secretos de integraciones (ej. SumUp).
+- **Despliegue:** Vercel.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📖 Documentación
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-<!-- Triggering fresh Vercel build to sync with latest underdesk-flow code -->
-
+La especificación completa del sistema, diccionario de datos, y diagrama de endpoints se encuentra en `MASTER_DOCUMENTATION.md`.

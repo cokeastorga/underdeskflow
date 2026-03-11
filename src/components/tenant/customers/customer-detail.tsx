@@ -82,10 +82,12 @@ export const CustomerDetailClient = ({ customerId }: CustomerDetailClientProps) 
 
     const getStatusBadge = (status: string) => {
         const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-            paid: "default",
-            pending: "secondary",
+            completed: "default",
+            open: "secondary",
             cancelled: "destructive",
-            delivered: "outline",
+            unfulfilled: "outline",
+            paid: "default",
+            pending: "secondary"
         };
         return <Badge variant={variants[status] || "outline"}>{status}</Badge>;
     };
@@ -228,7 +230,7 @@ export const CustomerDetailClient = ({ customerId }: CustomerDetailClientProps) 
                                                 </TableCell>
                                                 <TableCell>{getStatusBadge(order.status)}</TableCell>
                                                 <TableCell className="text-right">
-                                                    {formatCurrency(order.total)}
+                                                    {formatCurrency(order.totals?.total || 0)}
                                                 </TableCell>
                                                 <TableCell className="text-right">
                                                     <Button

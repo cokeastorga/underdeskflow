@@ -36,35 +36,36 @@ export const syncOrderToCustomer = async (order: Order) => {
             const customerDoc = querySnapshot.docs[0];
             const customerData = customerDoc.data() as Customer;
 
-            // Check if address exists
-            const newAddress = {
-                type: 'shipping' as const,
-                address: order.shippingAddress.address,
-                city: order.shippingAddress.city,
-                zip: order.shippingAddress.zip,
-                country: order.shippingAddress.country,
-                phone: order.shippingAddress.phone
-            };
-
-            const addressExists = customerData.addresses?.some(
-                a => a.address === newAddress.address && a.zip === newAddress.zip
-            );
-
             const updates: any = {
                 totalOrders: increment(1),
-                totalSpent: increment(order.total),
+                totalSpent: increment(order.totals?.total || 0),
                 lastOrderDate: order.createdAt, // Assumes syncing latest order
                 updatedAt: Date.now()
             };
 
-            if (!addressExists) {
-                updates.addresses = [...(customerData.addresses || []), newAddress];
-            }
+            if (order.shippingAddress) {
+                const newAddress = {
+                    type: 'shipping' as const,
+                    address: order.shippingAddress.address,
+                    city: order.shippingAddress.city,
+                    zip: order.shippingAddress.zip || "",
+                    country: order.shippingAddress.country || "Chile",
+                    phone: order.shippingAddress.phone
+                };
 
-            // Update name/phone if missing? Maybe not, keep original registration?
-            // Let's update phone if provided and currently empty
-            if (!customerData.phone && order.shippingAddress.phone) {
-                updates.phone = order.shippingAddress.phone;
+                const addressExists = customerData.addresses?.some(
+                    a => a.address === newAddress.address && a.zip === newAddress.zip
+                );
+
+                if (!addressExists) {
+                    updates.addresses = [...(customerData.addresses || []), newAddress];
+                }
+
+                // Update name/phone if missing? Maybe not, keep original registration?
+                // Let's update phone if provided and currently empty
+                if (!customerData.phone && order.shippingAddress.phone) {
+                    updates.phone = order.shippingAddress.phone;
+                }
             }
 
             await updateDoc(doc(db, "customers", customerDoc.id), updates);
@@ -74,21 +75,21 @@ export const syncOrderToCustomer = async (order: Order) => {
             // Create new customer
             const newCustomer: Omit<Customer, 'id'> = {
                 storeId: order.storeId,
-                firstName: order.shippingAddress.firstName || "Guest",
-                lastName: order.shippingAddress.lastName || "User",
+                firstName: order.shippingAddress?.firstName || order.customerName.split(" ")[0] || "Guest",
+                lastName: order.shippingAddress?.lastName || order.customerName.split(" ").slice(1).join(" ") || "User",
                 email: order.email,
-                phone: order.shippingAddress.phone,
+                phone: order.shippingAddress?.phone || order.phone || undefined,
                 totalOrders: 1,
-                totalSpent: order.total,
+                totalSpent: order.totals?.total || 0,
                 lastOrderDate: order.createdAt,
-                addresses: [{
+                addresses: order.shippingAddress ? [{
                     type: 'shipping',
                     address: order.shippingAddress.address,
                     city: order.shippingAddress.city,
-                    zip: order.shippingAddress.zip,
-                    country: order.shippingAddress.country,
+                    zip: order.shippingAddress.zip || "",
+                    country: order.shippingAddress.country || "Chile",
                     phone: order.shippingAddress.phone
-                }],
+                }] : [],
                 createdAt: Date.now(),
                 updatedAt: Date.now()
             };

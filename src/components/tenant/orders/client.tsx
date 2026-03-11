@@ -72,6 +72,10 @@ export const OrdersClient = () => {
             const dummyOrder: Omit<Order, "id"> = {
                 orderNumber: `#${Math.floor(1000 + Math.random() * 9000)}`,
                 storeId,
+                channel: "online",
+                status: "open",
+                paymentStatus: "paid",
+                fulfillmentStatus: "unfulfilled",
                 customerName: "Juan Pérez",
                 email: "juan@example.com",
                 items: [
@@ -82,18 +86,22 @@ export const OrdersClient = () => {
                         quantity: 1,
                     }
                 ],
-                subtotal: 59990,
-                shippingCost: 5000,
-                tax: 0,
-                total: 64990,
-                status: "paid",
-                paymentStatus: "paid",
+                totals: {
+                    subtotal: 59990,
+                    shipping: 5000,
+                    tax: 0,
+                    discount: 0,
+                    total: 64990
+                },
                 shippingAddress: {
                     address: "Av. Siempre Viva 742",
                     city: "Santiago",
                     zip: "8320000",
                     country: "Chile",
                     phone: "+56912345678"
+                },
+                audit: {
+                    createdBy: "admin_seeder"
                 },
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
@@ -111,14 +119,15 @@ export const OrdersClient = () => {
         }
     };
 
-    const getStatusColor = (status: OrderStatus) => {
+    const getStatusColor = (status: Order["status"] | Order["fulfillmentStatus"]) => {
         switch (status) {
-            case "paid": return "default"; // Black/Primary
+            case "completed": return "default";
             case "delivered": return "default";
-            case "shipped": return "secondary";
-            case "processing": return "secondary";
+            case "fulfilled": return "secondary";
+            case "preparing": return "secondary";
             case "cancelled": return "destructive";
-            case "pending": return "outline";
+            case "open": return "outline";
+            case "unfulfilled": return "outline";
             default: return "outline";
         }
     };
@@ -186,15 +195,20 @@ export const OrdersClient = () => {
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        <Badge variant={getStatusColor(order.status)}>
-                                            {order.status}
-                                        </Badge>
+                                        <div className="flex flex-col gap-1 items-start">
+                                            <Badge variant={getStatusColor(order.status)}>
+                                                {order.status}
+                                            </Badge>
+                                            <Badge variant={getStatusColor(order.fulfillmentStatus)} className="text-[10px]">
+                                                {order.fulfillmentStatus}
+                                            </Badge>
+                                        </div>
                                     </TableCell>
                                     <TableCell>
                                         <Badge variant="outline">{order.paymentStatus}</Badge>
                                     </TableCell>
-                                    <TableCell className="text-right">
-                                        ${order.total.toLocaleString("es-CL")}
+                                    <TableCell className="text-right font-medium">
+                                        ${order.totals?.total?.toLocaleString("es-CL") || 0}
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <DropdownMenu>

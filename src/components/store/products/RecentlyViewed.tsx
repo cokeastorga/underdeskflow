@@ -18,7 +18,7 @@ export function RecentlyViewedTracker({ product }: { product: Product }) {
     return null; // Headless component just for logic
 }
 
-export function RecentlyViewedSection({ currentProductId }: { currentProductId: string }) {
+export function RecentlyViewedSection({ currentProductId, storeId }: { currentProductId: string; storeId: string }) {
     const items = useRecentlyViewed(state => state.items);
     const [mounted, setMounted] = useState(false);
 
@@ -37,7 +37,7 @@ export function RecentlyViewedSection({ currentProductId }: { currentProductId: 
             <div className="container">
                 <FadeIn>
                     <h3 className="text-2xl font-bold mb-8 font-serif">Recently Viewed</h3>
-                    <ProductGrid products={filteredItems} template="minimal" />
+                    <ProductGrid products={filteredItems} storeId={storeId} template="minimal" />
                 </FadeIn>
             </div>
         </section>

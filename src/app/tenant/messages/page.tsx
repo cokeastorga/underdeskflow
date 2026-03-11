@@ -18,7 +18,7 @@ import {
     Mail,
     MessageSquare,
     Trash2,
-    MailForward,
+    Forward,
     Search,
     Filter,
     CheckCircle2,
@@ -281,7 +281,7 @@ export default function MessagesPage() {
 
                                 <div className="mt-12 space-y-4">
                                     <label className="text-xs font-bold uppercase tracking-widest text-zinc-500 flex items-center gap-2">
-                                        <MailForward className="w-4 h-4" /> Redactar Respuesta Inteligente
+                                        <Forward className="w-4 h-4" /> Redactar Respuesta Inteligente
                                     </label>
                                     <Textarea
                                         placeholder="Escribe tu respuesta aquí. Al terminar, usaremos tu App de correo para enviarla."

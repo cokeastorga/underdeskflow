@@ -3,12 +3,13 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { db } from "@/lib/firebase/config";
-import { collection, query, where, getDocs, orderBy, limit, Timestamp } from "firebase/firestore";
-import { CreditCard, DollarSign, Clock, CheckCircle2, XCircle, RefreshCw, TrendingUp, Building2 } from "lucide-react";
+import { collection, query, where, getDocs, orderBy, limit, doc, getDoc } from "firebase/firestore";
+import { CreditCard, DollarSign, Clock, CheckCircle2, XCircle, RefreshCw, TrendingUp, Building2, MonitorSmartphone, Wifi, WifiOff } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Link from "next/link";
 
 interface PaymentIntent {
     id: string;
@@ -44,6 +45,7 @@ const PROVIDER_COLORS: Record<string, string> = {
     stripe: "bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20",
     webpay: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20",
     mercadopago: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
+    sumup: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
 };
 
 function fmtAmount(amount: number, currency = "CLP") {
@@ -60,6 +62,8 @@ export default function PaymentsPage() {
     const { storeId } = useAuth();
     const [intents, setIntents] = useState<PaymentIntent[]>([]);
     const [payouts, setPayouts] = useState<Payout[]>([]);
+    const [posOrders, setPosOrders] = useState<any[]>([]);
+    const [sumUpConnected, setSumUpConnected] = useState(false);
     const [loading, setLoading] = useState(true);
     const [summary, setSummary] = useState({
         totalRevenue: 0,
@@ -103,6 +107,24 @@ export default function PaymentsPage() {
                     pendingAmount: pending.reduce((s, i) => s + (i.amount || 0), 0),
                     payoutTotal: payoutData.reduce((s, p) => s + (p.amount || 0), 0),
                 });
+
+                // POS today's orders
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const posSnap = await getDocs(
+                    query(
+                        collection(db, "stores", storeId!, "orders"),
+                        where("source", "==", "pos"),
+                        orderBy("createdAt", "desc"),
+                        limit(50)
+                    )
+                );
+                setPosOrders(posSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+
+                // SumUp connection status
+                const sumupMeta = await getDoc(doc(db, "stores", storeId!, "integrations", "sumup"));
+                setSumUpConnected(sumupMeta.exists() && sumupMeta.data()?.enabled === true);
+
             } catch (err) {
                 console.error("Payments load error:", err);
             } finally {
@@ -161,26 +183,33 @@ export default function PaymentsPage() {
                             { name: "Webpay", region: "Chile", status: "active" },
                             { name: "MercadoPago", region: "LATAM", status: "active" },
                             { name: "Flow", region: "Chile", status: "beta" },
+                            { name: "SumUp POS", region: "Lector físico", status: sumUpConnected ? "active" : "inactive" },
                         ].map(psp => (
                             <div key={psp.name} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border bg-card text-sm">
-                                <div className={`h-2 w-2 rounded-full ${psp.status === "active" ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground"}`} />
+                                <div className={`h-2 w-2 rounded-full ${
+                                    psp.status === "active" ? "bg-emerald-500 animate-pulse"
+                                    : psp.status === "beta" ? "bg-amber-500"
+                                    : "bg-muted-foreground"
+                                }`} />
                                 <span className="font-semibold">{psp.name}</span>
                                 <span className="text-muted-foreground text-xs">{psp.region}</span>
                                 {psp.status === "beta" && <Badge variant="secondary" className="text-[10px] h-4">Beta</Badge>}
+                                {psp.status === "inactive" && <Badge variant="outline" className="text-[10px] h-4 border-muted-foreground/30">No conectado</Badge>}
                             </div>
                         ))}
                     </div>
                 </CardContent>
             </Card>
 
-            {/* Transactions + Payouts Tabs */}
-            <Tabs defaultValue="transactions">
+            {/* Transactions + Payouts + POS Tabs */}
+            <Tabs defaultValue="online">
                 <TabsList>
-                    <TabsTrigger value="transactions">Transacciones</TabsTrigger>
+                    <TabsTrigger value="online">Online</TabsTrigger>
+                    <TabsTrigger value="pos" className="gap-1.5"><MonitorSmartphone className="h-3.5 w-3.5" />POS / SumUp</TabsTrigger>
                     <TabsTrigger value="payouts">Liquidaciones</TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="transactions" className="mt-4">
+                <TabsContent value="online" className="mt-4">
                     <Card>
                         <CardHeader className="pb-3">
                             <CardTitle className="text-sm">Últimas 50 transacciones</CardTitle>
@@ -237,6 +266,57 @@ export default function PaymentsPage() {
                                                     </tr>
                                                 );
                                             })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                {/* POS / SumUp Tab */}
+                <TabsContent value="pos" className="mt-4">
+                    <Card>
+                        <CardHeader className="pb-3">
+                            <CardTitle className="text-sm flex items-center gap-2">
+                                <MonitorSmartphone className="h-4 w-4" /> Ventas físicas (POS)
+                            </CardTitle>
+                            <CardDescription>
+                                Órdenes registradas desde el terminal de venta directa
+                                {sumUpConnected
+                                    ? <span className="ml-2 inline-flex items-center gap-1 text-emerald-500"><Wifi className="h-3 w-3" />SumUp conectado</span>
+                                    : <Link href="/tenant/pos" className="ml-2 text-blue-500 underline text-xs">Conectar SumUp →</Link>}
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {loading ? (
+                                <div className="py-8 text-center text-muted-foreground text-sm">Cargando ventas POS...</div>
+                            ) : posOrders.length === 0 ? (
+                                <div className="py-8 text-center">
+                                    <MonitorSmartphone className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
+                                    <p className="text-muted-foreground text-sm">Aún no hay ventas POS registradas.</p>
+                                    <Link href="/tenant/pos" className="text-primary text-xs underline mt-1 inline-block">Ir al terminal POS →</Link>
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm">
+                                        <thead>
+                                            <tr className="border-b text-xs text-muted-foreground">
+                                                <th className="text-left py-2 pr-4 font-medium">ID</th>
+                                                <th className="text-left py-2 pr-4 font-medium">Método</th>
+                                                <th className="text-right py-2 pr-4 font-medium">Total</th>
+                                                <th className="text-left py-2 font-medium">Fecha</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-border">
+                                            {posOrders.map(order => (
+                                                <tr key={order.id} className="hover:bg-muted/30 transition-colors">
+                                                    <td className="py-2.5 pr-4"><span className="font-mono text-xs text-muted-foreground">{order.id.slice(-8).toUpperCase()}</span></td>
+                                                    <td className="py-2.5 pr-4"><Badge variant="outline" className="text-[10px]">{order.paymentMethod ?? "—"}</Badge></td>
+                                                    <td className="py-2.5 pr-4 text-right font-semibold">{fmtAmount(order.total || 0)}</td>
+                                                    <td className="py-2.5 text-xs text-muted-foreground">{fmtDate(order.createdAt)}</td>
+                                                </tr>
+                                            ))}
                                         </tbody>
                                     </table>
                                 </div>

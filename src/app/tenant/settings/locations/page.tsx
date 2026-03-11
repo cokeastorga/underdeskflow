@@ -26,8 +26,15 @@ export default function LocationsPage() {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         name: "",
-        address: "",
-        hours: "",
+        isMain: false,
+        locationAddress: {
+            street: "",
+            city: "",
+            state: "",
+            zip: "",
+            country: "Chile", // Default
+        },
+        phone: "",
         isActive: true,
     });
 
@@ -47,7 +54,9 @@ export default function LocationsPage() {
 
     const resetForm = () => {
         setEditingId(null);
-        setFormData({ name: "", address: "", hours: "", isActive: true });
+        setFormData({
+            name: "", isMain: false, locationAddress: { street: "", city: "", state: "", zip: "", country: "Chile" }, phone: "", isActive: true
+        });
     };
 
     const handleOpenDialog = (location?: Location) => {
@@ -55,9 +64,10 @@ export default function LocationsPage() {
             setEditingId(location.id);
             setFormData({
                 name: location.name,
-                address: location.address,
-                hours: location.hours || "",
-                isActive: location.isActive,
+                isMain: location.isMain || false,
+                locationAddress: location.locationAddress || { street: "", city: "", state: "", zip: "", country: "Chile" },
+                phone: location.phone || "",
+                isActive: location.status === "active",
             });
         } else {
             resetForm();
@@ -139,7 +149,7 @@ export default function LocationsPage() {
                                 <TableRow>
                                     <TableHead>Nombre</TableHead>
                                     <TableHead>Dirección</TableHead>
-                                    <TableHead>Horario</TableHead>
+                                    <TableHead>Teléfono</TableHead>
                                     <TableHead>Estado</TableHead>
                                     <TableHead className="text-right">Acciones</TableHead>
                                 </TableRow>
@@ -149,13 +159,13 @@ export default function LocationsPage() {
                                     <TableRow key={loc.id}>
                                         <TableCell className="font-medium flex items-center gap-2">
                                             <Store className="h-4 w-4 text-muted-foreground" />
-                                            {loc.name}
+                                            {loc.name} {loc.isMain && <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">Sede Principal</span>}
                                         </TableCell>
-                                        <TableCell>{loc.address}</TableCell>
-                                        <TableCell>{loc.hours || "-"}</TableCell>
+                                        <TableCell>{loc.locationAddress?.street}, {loc.locationAddress?.city}</TableCell>
+                                        <TableCell>{loc.phone || "-"}</TableCell>
                                         <TableCell>
-                                            <span className={`px-2 py-1 rounded-full text-xs ${loc.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
-                                                {loc.isActive ? "Activo" : "Inactivo"}
+                                            <span className={`px-2 py-1 rounded-full text-xs ${loc.status === "active" ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
+                                                {loc.status === "active" ? "Activo" : "Inactivo"}
                                             </span>
                                         </TableCell>
                                         <TableCell className="text-right space-x-2">
@@ -194,31 +204,83 @@ export default function LocationsPage() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="address">Dirección</Label>
+                            <Label htmlFor="street">Calle y Número</Label>
                             <Input
-                                id="address"
-                                placeholder="Ej. Av. Principal 123, Oficina 404"
-                                value={formData.address}
-                                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                                id="street"
+                                placeholder="Ej. Av. Principal 123"
+                                value={formData.locationAddress.street}
+                                onChange={(e) => setFormData({ ...formData, locationAddress: { ...formData.locationAddress, street: e.target.value } })}
                                 required
                             />
                         </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="city">Ciudad / Comuna</Label>
+                                <Input
+                                    id="city"
+                                    placeholder="Ej. Santiago"
+                                    value={formData.locationAddress.city}
+                                    onChange={(e) => setFormData({ ...formData, locationAddress: { ...formData.locationAddress, city: e.target.value } })}
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="state">Región / Estado</Label>
+                                <Input
+                                    id="state"
+                                    placeholder="Ej. RM"
+                                    value={formData.locationAddress.state}
+                                    onChange={(e) => setFormData({ ...formData, locationAddress: { ...formData.locationAddress, state: e.target.value } })}
+                                    required
+                                />
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="zip">Código Postal</Label>
+                                <Input
+                                    id="zip"
+                                    placeholder="Opcional"
+                                    value={formData.locationAddress.zip}
+                                    onChange={(e) => setFormData({ ...formData, locationAddress: { ...formData.locationAddress, zip: e.target.value } })}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="country">País</Label>
+                                <Input
+                                    id="country"
+                                    value={formData.locationAddress.country}
+                                    onChange={(e) => setFormData({ ...formData, locationAddress: { ...formData.locationAddress, country: e.target.value } })}
+                                    required
+                                />
+                            </div>
+                        </div>
                         <div className="space-y-2">
-                            <Label htmlFor="hours">Horario de Atención</Label>
+                            <Label htmlFor="phone">Teléfono de Sucursal</Label>
                             <Input
-                                id="hours"
-                                placeholder="Ej. Lun-Vie 9:00 - 18:00"
-                                value={formData.hours}
-                                onChange={(e) => setFormData({ ...formData, hours: e.target.value })}
+                                id="phone"
+                                placeholder="Ej. +56 9 1234 5678"
+                                value={formData.phone}
+                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                             />
                         </div>
-                        <div className="flex items-center space-x-2 pt-2">
-                            <Switch
-                                id="active"
-                                checked={formData.isActive}
-                                onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
-                            />
-                            <Label htmlFor="active">Habilitar para retiro</Label>
+                        <div className="flex items-center justify-between pt-2 border-t mt-4">
+                            <div className="flex items-center space-x-2">
+                                <Switch
+                                    id="isMain"
+                                    checked={formData.isMain}
+                                    onCheckedChange={(checked) => setFormData({ ...formData, isMain: checked })}
+                                />
+                                <Label htmlFor="isMain" className="cursor-pointer">¿Es la Sede Principal?</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Switch
+                                    id="active"
+                                    checked={formData.isActive}
+                                    onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                                />
+                                <Label htmlFor="active" className="cursor-pointer">Sucursal Activa</Label>
+                            </div>
                         </div>
                         <DialogFooter>
                             <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>

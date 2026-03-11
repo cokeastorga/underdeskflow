@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, Package, Settings, LogOut, Store, ShoppingCart, Users, Megaphone, MapPin, ClipboardList, Menu, Palette, Truck, CreditCard, BarChart2, LayoutGrid, Globe, TrendingUp, Bell, Activity, AlertCircle, Search, Eye, MessageCircle } from "lucide-react";
+import { LayoutDashboard, Package, Settings, LogOut, Store, ShoppingCart, Users, Megaphone, MapPin, ClipboardList, Menu, Palette, Truck, CreditCard, BarChart2, LayoutGrid, Globe, TrendingUp, Bell, Activity, AlertCircle, Search, Eye, MessageCircle, MonitorSmartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { auth, db } from "@/lib/firebase/config";
@@ -130,6 +130,12 @@ export function TenantShell({
                     </p>
                 </div>
                 <NavLink href="/tenant" icon={LayoutDashboard}>Escritorio</NavLink>
+                <NavLink href="/tenant/pos" icon={MonitorSmartphone}>
+                    <span className="flex items-center gap-2 w-full">
+                        POS / Venta Directa
+                        <span className="ml-auto text-[9px] font-bold uppercase tracking-wide bg-blue-500/20 text-blue-400 border border-blue-500/30 px-1 py-0.5 rounded">Nuevo</span>
+                    </span>
+                </NavLink>
                 <NavLink href="/tenant/products" icon={Package}>
                     <span className="flex items-center gap-2 w-full">
                         Productos
@@ -310,6 +316,10 @@ export function TenantShell({
                     <CommandList>
                         <CommandEmpty>No se encontraron resultados.</CommandEmpty>
                         <CommandGroup heading="Sugerencias">
+                        <CommandItem onSelect={() => { router.push("/tenant/pos"); setOpen(false); }}>
+                                <MonitorSmartphone className="mr-2 h-4 w-4" />
+                                <span>POS / Venta Directa</span>
+                            </CommandItem>
                             <CommandItem onSelect={() => { router.push("/tenant/products"); setOpen(false); }}>
                                 <Package className="mr-2 h-4 w-4" />
                                 <span>Productos</span>

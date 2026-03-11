@@ -38,7 +38,7 @@ export default function WishlistPage() {
                         </Button>
                     </div>
                 ) : (
-                    <ProductGrid products={items} template="modern" />
+                    <ProductGrid products={items} storeId={storeId} template="modern" />
                 )}
             </FadeIn>
         </div>

@@ -35,6 +35,7 @@ Este proyecto sigue los lineamientos del estándar **ISO/IEC 12207** para asegur
 - **Motor de Pagos (Ledger)**: Sistema de partida doble que garantiza integridad financiera.
 - **Resilience Engine**: Implementación de *Circuit Breakers* y *Outbox Pattern* para tolerancia a fallos.
 - **Sincronizador de Canales**: Bus de eventos para actualización de stock y precios en tiempo real.
+- **Punto de Venta (POS)**: Sistema de venta física con soporte offline (Dexie.js), integración con terminales SumUp (vía Google Secret Manager), impresión directa a cocina (TCP 9100 ESC/POS) y gestión interactiva de mesas.
 
 ---
 
@@ -48,6 +49,10 @@ Este proyecto sigue los lineamientos del estándar **ISO/IEC 12207** para asegur
 | `orders` | `orderId` | `total`, `status`, `paymentStatus`, `items[]`, `shippingAddress` |
 | `ledger_transactions` | `txId` | `reference_id`, `type`, `entries[]` (Debits/Credits) |
 | `channel_connections` | `connId` | `channelType`, `credentials`, `status`, `syncConfig` |
+| `pos_sales` | `clientSaleId` | Venta Idempotente POS, `total`, `items[]`, `status`, `paymentMethod` |
+| `cash_sessions` | `sessionId` | Sesiones de caja POS: `openedBy`, `expectedCash`, `actualCash`, `status` |
+| `tables` | `tableId` | Gestión de mesas POS: `name`, `status`, `currentOrderId`, `seats` (Sub-colección de `stores`) |
+
 
 ---
 
@@ -62,6 +67,15 @@ Este proyecto sigue los lineamientos del estándar **ISO/IEC 12207** para asegur
 - `POST /api/payments/refund`: Procesa reembolsos totales o parciales (Requiere aprobación > $1M).
 - `POST /api/webhooks/payments/[provider]`: Recepción de eventos internos/nativos de procesamiento.
 - `POST /api/webhooks/channels/[channel]/[storeId]`: Sync de marketplaces (Shopify, ML, SumUp) — **Exclusivo Plan Enterprise**.
+
+### Punto de Venta (POS)
+- `POST /api/pos/sale`: Procesamiento idempotente de ventas físicas con soporte offline y encolado.
+- `GET / POST /api/pos/tables`: Gestión dinámica del mapa de mesas, aperturas y configuración.
+- `PATCH /api/pos/tables/[tableId]`: Modificación de comandos de restaurante (agregar ítem, cerrar cuenta, anular).
+- `POST /api/pos/kitchen/print`: Impresión térmica directa vía protocolo ESC/POS en IPs de red local (TCP 9100).
+- `GET / POST / PATCH /api/pos/cash-session`: Control ciclo de vida de caja, cuadraturas y take-overs.
+- `GET / POST / DELETE /api/pos/sumup/*`: Gestión de terminales SumUp en sucursales físicas usando Secret Manager.
+
 
 ---
 
