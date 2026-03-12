@@ -40,6 +40,24 @@
       "fields": [
         { "fieldPath": "clientSaleId", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "cash_sessions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "storeId", "order": "ASCENDING" },
+        { "fieldPath": "registerId", "order": "ASCENDING" },
+        { "fieldPath": "closedAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "inventory_balances",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "storeId", "order": "ASCENDING" },
+        { "fieldPath": "locationId", "order": "ASCENDING" },
+        { "fieldPath": "variantId", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

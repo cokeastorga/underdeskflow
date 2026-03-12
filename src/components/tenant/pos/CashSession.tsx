@@ -2,15 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/firebase/auth-context";
-import { DollarSign, LogIn, LogOut, Minus, Loader2, AlertTriangle, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react";
+import { DollarSign, LogIn, LogOut, Minus, Loader2, AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, MapPin, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
-// ── Types ──────────────────────────────────────────────────────────────────
 interface CashSession {
     id: string;
     openedBy: string;
@@ -24,44 +24,81 @@ interface CashSession {
     difference?: number;
 }
 
+interface Branch { id: string; name: string; }
+interface Register { id: string; name: string; branchId: string; }
+
 function fmt(n: number) {
     return new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP", minimumFractionDigits: 0 }).format(n);
 }
 
-// ── Main Component ────────────────────────────────────────────────────────
-
 export function CashSession({ onSessionChange }: { onSessionChange?: (sessionId: string | null) => void }) {
     const { user, storeId } = useAuth();
+    
+    // Core state
     const [session, setSession] = useState<CashSession | null>(null);
     const [conflict, setConflict] = useState<CashSession | null>(null);
     const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
+
+    // Context selection
+    const [branches, setBranches] = useState<Branch[]>([]);
+    const [registers, setRegisters] = useState<Register[]>([]);
+    const [selectedBranch, setSelectedBranch] = useState<string>("");
+    const [selectedRegister, setSelectedRegister] = useState<string>("");
+
+    // Form states
     const [openingAmount, setOpeningAmount] = useState("");
     const [closingAmount, setClosingAmount] = useState("");
     const [withdrawalAmount, setWithdrawalAmount] = useState("");
     const [withdrawalNote, setWithdrawalNote] = useState("");
     const [showClose, setShowClose] = useState(false);
     const [showWithdrawal, setShowWithdrawal] = useState(false);
-    const [submitting, setSubmitting] = useState(false);
 
-    const load = async () => {
+    // Setup: fetch branches and registers on mount
+    useEffect(() => {
         if (!storeId) return;
-        setLoading(true);
-        try {
-            const res = await fetch(`/api/pos/cash-session?storeId=${storeId}`);
-            const data = await res.json();
-            setSession(data.session);
-            onSessionChange?.(data.session?.id ?? null);
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
-    };
+        const fetchContext = async () => {
+            try {
+                const [bRes, rRes] = await Promise.all([
+                    fetch(`/api/store/branches?storeId=${storeId}`),
+                    fetch(`/api/store/registers?storeId=${storeId}`)
+                ]);
+                const bData = await bRes.json();
+                const rData = await rRes.json();
+                setBranches(bData.branches || []);
+                setRegisters(rData.registers || []);
+            } catch (err) {
+                console.error("Error fetching branches/registers", err);
+            } finally {
+                setLoading(false); // Initial load done, but no session loaded yet
+            }
+        };
+        fetchContext();
+    }, [storeId]);
 
-    useEffect(() => { load(); }, [storeId]);
+    // Secondary load: fetch session when a register is selected
+    useEffect(() => {
+        if (!storeId || !selectedBranch || !selectedRegister) return;
+        
+        const loadSession = async () => {
+            setLoading(true);
+            try {
+                const url = `/api/pos/cash-session?storeId=${storeId}&branchId=${selectedBranch}&registerId=${selectedRegister}`;
+                const res = await fetch(url);
+                const data = await res.json();
+                setSession(data.session);
+                onSessionChange?.(data.session?.id ?? null);
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadSession();
+    }, [storeId, selectedBranch, selectedRegister, onSessionChange]);
 
     const openSession = async (forceTakeover = false) => {
-        if (!storeId || !user) return;
+        if (!storeId || !user || !selectedBranch || !selectedRegister) return;
         setSubmitting(true);
         try {
             const res = await fetch("/api/pos/cash-session", {
@@ -69,8 +106,12 @@ export function CashSession({ onSessionChange }: { onSessionChange?: (sessionId:
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     storeId,
+                    branchId: selectedBranch,
+                    registerId: selectedRegister,
                     openingAmount: Number(openingAmount),
                     openedBy: user.displayName ?? user.email ?? "Desconocido",
+                    openedByUserId: user.uid,
+                    deviceId: "pos-webclient-1", // Consider generating/retrieving a stable device ID from localStorage later
                     forceTakeover,
                 }),
             });
@@ -82,7 +123,11 @@ export function CashSession({ onSessionChange }: { onSessionChange?: (sessionId:
             setConflict(null);
             toast.success("Caja abierta correctamente");
             setOpeningAmount("");
-            await load();
+            // Reload session
+            const sRes = await fetch(`/api/pos/cash-session?storeId=${storeId}&branchId=${selectedBranch}&registerId=${selectedRegister}`);
+            const sData = await sRes.json();
+            setSession(sData.session);
+            onSessionChange?.(sData.session?.id ?? null);
         } catch {
             toast.error("Error al abrir la caja");
         } finally {
@@ -91,14 +136,13 @@ export function CashSession({ onSessionChange }: { onSessionChange?: (sessionId:
     };
 
     const addWithdrawal = async () => {
-        if (!storeId || !session || !withdrawalAmount) return;
+        if (!session || !withdrawalAmount) return;
         setSubmitting(true);
         try {
             await fetch("/api/pos/cash-session", {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    storeId,
                     sessionId: session.id,
                     action: "withdrawal",
                     amount: Number(withdrawalAmount),
@@ -110,7 +154,12 @@ export function CashSession({ onSessionChange }: { onSessionChange?: (sessionId:
             setWithdrawalAmount("");
             setWithdrawalNote("");
             setShowWithdrawal(false);
-            await load();
+            
+            // Reload
+            const url = `/api/pos/cash-session?storeId=${storeId}&branchId=${selectedBranch}&registerId=${selectedRegister}`;
+            const sRes = await fetch(url);
+            const sData = await sRes.json();
+            setSession(sData.session);
         } catch {
             toast.error("Error al registrar retiro");
         } finally {
@@ -119,14 +168,13 @@ export function CashSession({ onSessionChange }: { onSessionChange?: (sessionId:
     };
 
     const closeSession = async () => {
-        if (!storeId || !session) return;
+        if (!session) return;
         setSubmitting(true);
         try {
             const res = await fetch("/api/pos/cash-session", {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    storeId,
                     sessionId: session.id,
                     action: "close",
                     closingAmount: Number(closingAmount),
@@ -138,10 +186,11 @@ export function CashSession({ onSessionChange }: { onSessionChange?: (sessionId:
             if (diff === 0) toast.success("Caja cerrada. ¡Cuadra perfecta!");
             else if (diff > 0) toast.success(`Caja cerrada. Sobrante: ${fmt(diff)}`);
             else toast.warning(`Caja cerrada. Faltante: ${fmt(Math.abs(diff))}`);
+            
             setClosingAmount("");
             setShowClose(false);
+            setSession(null);
             onSessionChange?.(null);
-            await load();
         } catch {
             toast.error("Error al cerrar la caja");
         } finally {
@@ -149,14 +198,85 @@ export function CashSession({ onSessionChange }: { onSessionChange?: (sessionId:
         }
     };
 
-    if (loading) {
+    if (loading && (!branches.length || (!session && selectedRegister))) {
         return <div className="flex items-center justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
     }
 
-    // ── No active session ──────────────────────────────────────────────────
+    // Filter registers by selected branch
+    const availableRegisters = registers.filter(r => r.branchId === selectedBranch);
+
+    // ── Context Selector (If not selected) ─────────────────────────────────
+    if (!selectedBranch || !selectedRegister) {
+        return (
+            <div className="max-w-md mx-auto space-y-6 py-8">
+                <div className="text-center space-y-2">
+                    <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                        <MapPin className="h-8 w-8 text-primary" />
+                    </div>
+                    <h2 className="text-xl font-semibold">Selecciona Sucursal y Caja</h2>
+                    <p className="text-muted-foreground text-sm">Configura el punto de venta antes de abrir el turno.</p>
+                </div>
+
+                <div className="space-y-4">
+                    <div className="space-y-1.5">
+                        <Label>Sucursal</Label>
+                        <Select value={selectedBranch} onValueChange={(val) => {
+                            setSelectedBranch(val);
+                            setSelectedRegister(""); // Reset register
+                        }}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Selecciona una sucursal..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {branches.map(b => (
+                                    <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                                ))}
+                                {branches.length === 0 && <SelectItem value="none" disabled>No se encontraron sucursales</SelectItem>}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <Label>Caja Registradora</Label>
+                        <Select value={selectedRegister} onValueChange={setSelectedRegister} disabled={!selectedBranch}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Selecciona una caja..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {availableRegisters.map(r => (
+                                    <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                                ))}
+                                {availableRegisters.length === 0 && <SelectItem value="none" disabled>No se encontraron cajas en esta sucursal</SelectItem>}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // ── No active session (But Branch/Register Selected) ───────────────────
     if (!session) {
         return (
             <div className="max-w-md mx-auto space-y-6 py-8">
+                <div className="flex items-center justify-between mb-8 px-4 py-2 border rounded-full bg-muted/50">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <MapPin className="h-4 w-4" />
+                        <span>{branches.find(b => b.id === selectedBranch)?.name}</span>
+                    </div>
+                    <div className="w-px h-4 bg-border" />
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Monitor className="h-4 w-4" />
+                        <span>{registers.find(r => r.id === selectedRegister)?.name}</span>
+                    </div>
+                    <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => {
+                        setSelectedBranch("");
+                        setSelectedRegister("");
+                    }}>
+                        Cambiar
+                    </Button>
+                </div>
+
                 <div className="text-center space-y-2">
                     <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
                         <DollarSign className="h-8 w-8 text-primary" />
@@ -215,6 +335,21 @@ export function CashSession({ onSessionChange }: { onSessionChange?: (sessionId:
 
     return (
         <div className="space-y-6">
+            {/* Session Header / Context */}
+            <div className="flex items-center justify-between p-3 rounded-xl border bg-card">
+                <div className="flex items-center gap-3">
+                    <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <div className="text-sm">
+                        <span className="font-medium">Turno activo</span>
+                        <span className="text-muted-foreground ml-2">
+                            · {branches.find(b => b.id === selectedBranch)?.name} 
+                            · {registers.find(r => r.id === selectedRegister)?.name}
+                        </span>
+                    </div>
+                </div>
+                <Badge variant="outline" className="border-emerald-500/40 text-emerald-500">Abierto</Badge>
+            </div>
+
             {/* Session summary */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {[
@@ -230,16 +365,6 @@ export function CashSession({ onSessionChange }: { onSessionChange?: (sessionId:
                         </CardContent>
                     </Card>
                 ))}
-            </div>
-
-            {/* Session info */}
-            <div className="flex items-center gap-3 p-3 rounded-xl border bg-card">
-                <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                <div className="flex-1 text-sm">
-                    <span className="font-medium">Turno activo</span>
-                    <span className="text-muted-foreground ml-2">· {session.openedBy} · {session.saleCount} venta{session.saleCount !== 1 ? "s" : ""}</span>
-                </div>
-                <Badge variant="outline" className="border-emerald-500/40 text-emerald-500">Abierto</Badge>
             </div>
 
             {/* Withdrawal section */}

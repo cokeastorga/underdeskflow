@@ -1,28 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase/admin-config";
-
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 
 /**
- * Cash Session Management API
- *
- * POST   — Open a new session. If another open session exists, returns conflict info for force-takeover.
- * PATCH  — Update session (add withdrawal / close session).
- * GET    — Get active session for a store.
+ * Cash Session Management API (Global / Multi-Branch)
  */
 
 export async function POST(req: NextRequest) {
     try {
-        const { storeId, openingAmount, openedBy, forceTakeover } = await req.json();
+        const { storeId, branchId, registerId, openingAmount, openedBy, forceTakeover, deviceId = "unknown-device", openedByUserId } = await req.json();
 
-        if (!storeId || openingAmount === undefined || !openedBy) {
-            return NextResponse.json({ error: "storeId, openingAmount, openedBy required" }, { status: 400 });
+        if (!storeId || !branchId || !registerId || openingAmount === undefined || !openedBy || !openedByUserId) {
+            return NextResponse.json({ error: "storeId, branchId, registerId, openingAmount, openedBy, openedByUserId required" }, { status: 400 });
         }
 
-        const sessionsRef = adminDb.collection("stores").doc(storeId).collection("cash_sessions");
+        const sessionsRef = adminDb.collection("cash_sessions");
 
-        // Check for existing open session
-        const openSnap = await sessionsRef.where("status", "==", "open").limit(1).get();
+        // Strict Uniqueness check: closedAt must be null on a specific register
+        const openSnap = await sessionsRef
+            .where("storeId", "==", storeId)
+            // Note: Register uniqueness automatically isolates it to the branch
+            .where("registerId", "==", registerId)
+            .where("closedAt", "==", null)
+            .limit(1)
+            .get();
 
         if (!openSnap.empty && !forceTakeover) {
             const existing = openSnap.docs[0];
@@ -32,22 +33,25 @@ export async function POST(req: NextRequest) {
             });
         }
 
-        // If force takeover, mark the previous session as taken_over
         if (!openSnap.empty && forceTakeover) {
             await openSnap.docs[0].ref.update({
                 status: "taken_over",
+                closedAt: Timestamp.now(), // Close properly so subsequent unique queries work
                 takenOverBy: openedBy,
                 takenOverAt: Timestamp.now(),
             });
         }
 
-        // Create new session
         const now = Timestamp.now();
         const sessionRef = sessionsRef.doc();
         await sessionRef.set({
             id: sessionRef.id,
             storeId,
+            branchId,
+            registerId,
+            deviceId,
             openedBy,
+            openedByUserId,
             openingAmount,
             openedAt: now,
             status: "open",
@@ -72,18 +76,12 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
     try {
         const { storeId, sessionId, action, ...payload } = await req.json();
-        // action: "withdrawal" | "close"
 
-        if (!storeId || !sessionId || !action) {
-            return NextResponse.json({ error: "storeId, sessionId, action required" }, { status: 400 });
+        if (!sessionId || !action) {
+            return NextResponse.json({ error: "sessionId, action required" }, { status: 400 });
         }
 
-        const sessionRef = adminDb
-            .collection("stores")
-            .doc(storeId)
-            .collection("cash_sessions")
-            .doc(sessionId);
-
+        const sessionRef = adminDb.collection("cash_sessions").doc(sessionId);
         const snap = await sessionRef.get();
         if (!snap.exists) {
             return NextResponse.json({ error: "Session not found" }, { status: 404 });
@@ -132,16 +130,18 @@ export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
         const storeId = searchParams.get("storeId");
+        const branchId = searchParams.get("branchId");
+        const registerId = searchParams.get("registerId");
 
-        if (!storeId) {
-            return NextResponse.json({ error: "storeId required" }, { status: 400 });
+        if (!storeId || !branchId || !registerId) {
+            return NextResponse.json({ error: "storeId, branchId, and registerId required" }, { status: 400 });
         }
 
         const snap = await adminDb
-            .collection("stores")
-            .doc(storeId)
             .collection("cash_sessions")
-            .where("status", "==", "open")
+            .where("storeId", "==", storeId)
+            .where("registerId", "==", registerId)
+            .where("closedAt", "==", null)
             .limit(1)
             .get();
 

@@ -2,189 +2,77 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // ─────────────────────────────────────────────
-    // HELPERS
-    // ─────────────────────────────────────────────
-
-    function userDoc() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    
+    // Auth context helpers
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Validates that the logged-in user has the custom claim `storeId` matching the document's `storeId`
+    function isTenantAdmin(targetStoreId) {
+      return isAuthenticated() && request.auth.token.storeId == targetStoreId;
     }
 
-    function getUserStoreId() {
-      return userDoc().storeId;
+    match /accounts/{accountId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == accountId;
     }
-
-    function getUserStoreCount() {
-      return userDoc().get("storeCount", 0);
-    }
-
-    function maxStoresForPlan() {
-      let plan = userDoc().get("plan", "basic");
-      return plan == "enterprise" ? 20 : (plan == "pro" ? 5 : 1);
-    }
-
-    // ── RBAC Permission helpers ─────────────────────────
-    // Permissions are stored as a string array in the ID token 'permissions' claim.
-
-    function hasPermission(perm) {
-      let isSystemAdmin = request.auth.token.get("posRole", "") == "admin";
-      let permsList = request.auth.token.get("permissions", []);
-      return isSystemAdmin || (perm in permsList);
-    }
-
-    function isOwner(storeId) {
-      return request.auth != null && getUserStoreId() == storeId;
-    }
-
-    // ─────────────────────────────────────────────
-    // USERS
-    // ─────────────────────────────────────────────
-
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // ─────────────────────────────────────────────
-    // STORES
-    // ─────────────────────────────────────────────
 
     match /stores/{storeId} {
-      allow create: if request.auth != null
-        && request.resource.data.ownerId == request.auth.uid
-        && getUserStoreCount() < maxStoresForPlan();
-
-      allow read, update: if request.auth != null
-        && resource.data.ownerId == request.auth.uid;
-
-      allow delete: if request.auth != null
-        && resource.data.ownerId == request.auth.uid;
-
-      // ── Store subcollections ──────────────────
-
-      // Orders: owner full access; cashier can create POS orders, cannot delete
-      match /orders/{orderId} {
-        allow read: if isOwner(storeId) || hasPermission("pos_access");
-        allow create: if isOwner(storeId) || hasPermission("pos_access");
-        allow update: if isOwner(storeId) || hasPermission("void_sale") || hasPermission("refund_payment");
-        allow delete: if isOwner(storeId); // staff cannot delete
-      }
-
-      // Products: owner full access; cashier read-only (for POS grid)
-      match /products/{productId} {
-        allow read: if isOwner(storeId) || hasPermission("pos_access") || true; // public for storefront
-        allow write: if isOwner(storeId);
-      }
-
-      // Categories: public read
-      match /categories/{catId} {
-        allow read: if true;
-        allow write: if isOwner(storeId);
-      }
-
-      // Cash sessions: owner full; cashier creates/reads own, manager closes any
-      match /cash_sessions/{sessionId} {
-        allow read: if isOwner(storeId) || hasPermission("pos_access");
-        allow create: if isOwner(storeId) || hasPermission("pos_access");
-        allow update: if isOwner(storeId) || hasPermission("manage_settings");
-        allow delete: if isOwner(storeId);
-      }
-
-      // Integrations metadata (SumUp, etc): owner only
-      match /integrations/{integrationId} {
-        allow read: if isOwner(storeId) || hasPermission("manage_settings");
-        allow write: if isOwner(storeId);
-      }
-
-      // General catch-all for other store subcollections
-      match /{subcollection}/{docId} {
-        allow read, write: if isOwner(storeId);
-      }
+      allow read: if isTenantAdmin(storeId);
+      allow write: if isTenantAdmin(storeId);
+    }
+    
+    // Public Catalog (Readable for storefront, protected for writes)
+    match /categories/{docId} {
+      allow read: if true; 
+      allow write: if isTenantAdmin(resource.data.storeId) || isTenantAdmin(request.resource.data.storeId);
+    }
+    
+    match /products/{docId} {
+       allow read: if true;
+       allow write: if isTenantAdmin(resource.data.storeId) || isTenantAdmin(request.resource.data.storeId);
+    }
+    
+    match /variants/{docId} {
+       allow read: if true;
+       allow write: if isTenantAdmin(resource.data.storeId) || isTenantAdmin(request.resource.data.storeId);
     }
 
-    // ─────────────────────────────────────────────
-    // POS SALE INDEX (idempotency)
-    // ─────────────────────────────────────────────
-
-    match /pos_sale_index/{clientSaleId} {
-      // Only server-side writes (API routes) should touch this
-      allow read: if false;
-      allow write: if false;
+    // INTERNAL/SENSITIVE DOMAINS (Strict isolation)
+    match /inventory_movements/{docId} {
+       allow read, write: if isTenantAdmin(resource.data.storeId) || isTenantAdmin(request.resource.data.storeId);
+    }
+    
+    match /orders/{docId} {
+       allow read: if isTenantAdmin(resource.data.storeId);
+       allow write: if isTenantAdmin(resource.data.storeId) || isTenantAdmin(request.resource.data.storeId);
     }
 
-    // ─────────────────────────────────────────────
-    // ANALYTICS DAILY
-    // ─────────────────────────────────────────────
-
-    match /analytics_daily/{docId} {
-      // Server writes only; owners can read their own analytics
-      allow read: if request.auth != null && resource.data.storeId == getUserStoreId();
-      allow write: if false; // server-side only
+    match /payment_intents/{docId} {
+       allow read, write: if isTenantAdmin(resource.data.storeId) || isTenantAdmin(request.resource.data.storeId);
     }
 
-    // ─────────────────────────────────────────────
-    // PRODUCTS (global, public read for storefronts)
-    // ─────────────────────────────────────────────
-
-    match /products/{productId} {
-      allow read: if true;
-      allow create: if request.auth != null
-        && request.resource.data.storeId == getUserStoreId();
-      allow update, delete: if request.auth != null
-        && resource.data.storeId == getUserStoreId();
+    match /payments_ledger/{docId} {
+       allow read, write: if isTenantAdmin(resource.data.storeId) || isTenantAdmin(request.resource.data.storeId);
     }
 
-    // ─────────────────────────────────────────────
-    // ORDERS (global, owner store only)
-    // ─────────────────────────────────────────────
-
-    match /orders/{orderId} {
-      allow read, write: if request.auth != null
-        && resource.data.storeId == getUserStoreId();
-      allow create: if request.auth != null
-        && request.resource.data.storeId == getUserStoreId();
+    // FINANCIALS / PAYOUTS (Highly restricted, written via Admin SDK only ideally)
+    match /platform_fees/{docId} {
+       allow read: if isTenantAdmin(resource.data.storeId);
+       allow write: if false; // Only written by secure Backend Workers/Webhooks
     }
 
-    // ─────────────────────────────────────────────
-    // SUBSCRIPTIONS — owner only, server writes
-    // ─────────────────────────────────────────────
-
-    match /subscriptions/{subId} {
-      allow read: if request.auth != null
-        && resource.data.ownerId == request.auth.uid;
-      allow write: if false;
+    match /payout_batch/{docId} {
+       allow read: if isTenantAdmin(resource.data.storeId);
+       allow write: if false; // Only written by Scheduled Cron Workers
     }
 
-    // ─────────────────────────────────────────────
-    // OTHER COLLECTIONS: owner store match
-    // ─────────────────────────────────────────────
-
-    match /locations/{locId} {
-      allow read, update, delete: if request.auth != null
-        && resource.data.storeId == getUserStoreId();
-      allow create: if request.auth != null
-        && request.resource.data.storeId == getUserStoreId();
+    match /system_errors/{docId} {
+        allow read, write: if false; // Internal logger only
     }
 
-    match /vehicles/{vehicleId} {
-      allow read, update, delete: if request.auth != null
-        && resource.data.storeId == getUserStoreId();
-      allow create: if request.auth != null
-        && request.resource.data.storeId == getUserStoreId();
-    }
-
-    match /drivers/{driverId} {
-      allow read, update, delete: if request.auth != null
-        && resource.data.storeId == getUserStoreId();
-      allow create: if request.auth != null
-        && request.resource.data.storeId == getUserStoreId();
-    }
-
-    match /shippingZones/{zoneId} {
-      allow read, update, delete: if request.auth != null
-        && resource.data.storeId == getUserStoreId();
-      allow create: if request.auth != null
-        && request.resource.data.storeId == getUserStoreId();
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

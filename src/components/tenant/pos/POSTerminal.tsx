@@ -245,27 +245,57 @@ export function POSTerminal({ cashSessionId }: { cashSessionId?: string }) {
 
         try {
             const token = await user.getIdToken();
-            const res = await fetch("/api/pos/sale", {
+            
+            // 1. Create the Unified Order FIRST (Always OPEN at this stage)
+            const orderRes = await fetch("/api/orders", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify(payload),
+                body: JSON.stringify({ ...payload, paymentMethod: undefined }), // Defer payment
             });
 
-            const data = await res.json();
+            const orderData = await orderRes.json();
+            if (!orderRes.ok) throw new Error(orderData.error ?? "Error al crear la orden");
 
-            if (!res.ok) {
-                throw new Error(data.error ?? "Error al procesar la venta");
+            const orderId = orderData.orderId;
+
+            // 2. Handle Payment Flow
+            if (paymentMethod === "sumup" || paymentMethod === "transfer") {
+                // Async Hardware Payment or Pending Transfer Verification
+                const intentRes = await fetch("/api/payments/intents", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({
+                        storeId,
+                        orderId,
+                        amount: total,
+                        provider: paymentMethod === "sumup" ? "SUMUP" : "TRANSFER",
+                        deviceId: "pos-1", // Should come from terminal config in real life
+                        idempotencyKey: `${orderId}-pos-1`
+                    })
+                });
+                
+                if (!intentRes.ok) {
+                     toast.error("Orden guardada, pero falló inicio de pago en terminal.");
+                } else {
+                     toast.info(`Cobro enviado al Terminal. Esperando confirmación... (Ref: ${orderId.slice(-8)})`, { duration: 5000 });
+                }
+            } else {
+                // CASH is instant. We can tell Backend to mark it PAID immediately via a separate call or unified logic.
+                // For now, we simulate success for Cash. In production, Cash logic might be a special Intent type.
+                toast.success(
+                    orderData.duplicate
+                        ? `Venta ya registrada (ref: ${orderId.slice(-8)})`
+                        : `✓ Venta registrada (Efectivo) — ${fmt(total)}`,
+                    { duration: 3000 }
+                );
             }
 
-            toast.success(
-                data.duplicate
-                    ? `Venta ya registrada (ref: ${data.orderId.slice(-8)})`
-                    : `✓ Venta registrada — ${fmt(total)}`,
-                { duration: 3000 }
-            );
             setCart([]);
             setDiscount(0);
         } catch (err: any) {
