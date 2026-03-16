@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { OrderFulfillment, FulfillmentStatus } from "@/domains/fulfillment/types";
 import {
@@ -11,6 +11,8 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { MapPin } from "lucide-react";
+
+// ... (COLUMNS, NEXT_STATUS, TYPE_LABEL, FulfillmentCard remain identical below)
 
 const COLUMNS: { status: FulfillmentStatus; label: string; color: string; icon: string }[] = [
     { status: "PENDING",         label: "Pendiente",       color: "from-slate-500 to-slate-700",   icon: "🕐" },
@@ -94,7 +96,8 @@ function FulfillmentCard({
 
 interface Branch { id: string; name: string; }
 
-export default function FulfillmentsKanbanPage() {
+// Extracted inner component that safely uses useSearchParams
+function KanbanBoard() {
     const searchParams = useSearchParams();
     const storeId = searchParams.get("storeId") ?? undefined;
 
@@ -247,5 +250,17 @@ export default function FulfillmentsKanbanPage() {
                 ))}
             </div>
         </div>
+    );
+}
+
+export default function FulfillmentsKanbanPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-gray-950 flex items-center justify-center p-6 text-white text-xl">
+                Cargando tablero Kanban...
+            </div>
+        }>
+            <KanbanBoard />
+        </Suspense>
     );
 }

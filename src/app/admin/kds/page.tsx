@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { OrderFulfillment, FulfillmentStatus } from "@/domains/fulfillment/types";
 import {
@@ -19,7 +19,7 @@ interface Branch { id: string; name: string; }
  * Tablet-optimized view showing only PENDING and PREPARING cards.
  * Large touch targets designed for gloves, busy kitchens, and warehouse floors.
  */
-export default function KDSPage() {
+function KDSTabletCard() {
     const searchParams = useSearchParams();
     const storeId = searchParams.get("storeId") ?? undefined;
 
@@ -247,5 +247,17 @@ export default function KDSPage() {
                 </div>
             )}
         </div>
+    );
+}
+
+export default function KDSPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-gray-950 flex items-center justify-center p-6 text-white text-xl">
+                Cargando KDS...
+            </div>
+        }>
+            <KDSTabletCard />
+        </Suspense>
     );
 }
