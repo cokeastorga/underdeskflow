@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Lock, Mail, Chrome, User, Phone, Building2, LayoutTemplate, Check } from "lucide-react";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, collection, query, limit, getDocs } from "firebase/firestore";
 import Link from "next/link";
 import { motion } from "framer-motion";
 
@@ -54,6 +54,11 @@ export default function RegisterPage() {
                 body: JSON.stringify({ idToken }),
             });
 
+            // Determine if this is the very first user in the system
+            const usersSnap = await getDocs(query(collection(db, "users"), limit(1)));
+            const isFirstUser = usersSnap.empty;
+            const role = isFirstUser ? "SuperAdmin" : "owner";
+
             // Create user document with enhanced profile
             await setDoc(doc(db, "users", user.uid), {
                 firstName: formData.firstName,
@@ -62,12 +67,12 @@ export default function RegisterPage() {
                 phone: formData.phone,
                 email: user.email,
                 createdAt: Date.now(),
-                role: "owner", // Owner of the new tenant
+                role, // SuperAdmin or owner
                 onboardingComplete: false
             });
 
-            toast.success("¡Cuenta creada! Redirigiendo a la configuración...");
-            router.push("/tenant/onboarding");
+            toast.success("¡Cuenta creada! Redirigiendo...");
+            router.push(isFirstUser ? "/superadmin" : "/tenant/onboarding");
         } catch (error: any) {
             console.error("Registration error:", error);
             if (error.code === 'auth/email-already-in-use') {
@@ -93,15 +98,20 @@ export default function RegisterPage() {
                 body: JSON.stringify({ idToken }),
             });
 
+            // Determine if this is the very first user in the system
+            const usersSnap = await getDocs(query(collection(db, "users"), limit(1)));
+            const isFirstUser = usersSnap.empty;
+            const role = isFirstUser ? "SuperAdmin" : "owner";
+
             // Ensure user document exists
             await setDoc(doc(db, "users", user.uid), {
                 email: user.email,
                 createdAt: Date.now(),
-                role: "owner",
+                role, // SuperAdmin or owner
                 onboardingComplete: false
             }, { merge: true });
 
-            router.push("/tenant/onboarding");
+            router.push(isFirstUser ? "/superadmin" : "/tenant/onboarding");
         } catch (error: any) {
             console.error("Google register error:", error);
             toast.error("Falló el registro con Google.");

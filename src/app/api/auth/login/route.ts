@@ -19,9 +19,23 @@ export async function POST(request: NextRequest) {
 
     // 3. CSRF origin check (production only)
     if (process.env.NODE_ENV === "production") {
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL ? process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '') : "";
+        const vercelUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "";
         const origin = request.headers.get("origin") ?? request.headers.get("referer") ?? "";
-        if (appUrl && !origin.startsWith(appUrl)) {
+        
+        const host = request.headers.get("host") ?? "";
+        let originHost = "";
+        try {
+            if (origin) originHost = new URL(origin).host;
+        } catch { /* ignore malformed origin */ }
+
+        const isAllowed = 
+            (originHost && originHost === host) ||
+            (appUrl && origin.startsWith(appUrl)) ||
+            (vercelUrl && origin.startsWith(vercelUrl));
+
+        if (origin && !isAllowed) {
+            console.warn(`[Auth] CSRF Blocked: origin=${origin}, host=${host}, appUrl=${appUrl}`);
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
     }
