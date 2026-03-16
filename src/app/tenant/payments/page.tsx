@@ -4,12 +4,15 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { db } from "@/lib/firebase/config";
 import { collection, query, where, getDocs, orderBy, limit, doc, getDoc } from "firebase/firestore";
-import { CreditCard, DollarSign, Clock, CheckCircle2, XCircle, RefreshCw, TrendingUp, Building2, MonitorSmartphone, Wifi, WifiOff } from "lucide-react";
+import { CreditCard, DollarSign, Clock, CheckCircle2, XCircle, RefreshCw, TrendingUp, Building2, MonitorSmartphone, Wifi } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { toast } from "sonner";
+import { Suspense } from "react";
 
 interface PaymentIntent {
     id: string;
@@ -58,12 +61,14 @@ function fmtDate(ts: any) {
     return d.toLocaleDateString("es-CL", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
-export default function PaymentsPage() {
+export function PaymentsDashboard() {
     const { storeId } = useAuth();
+    const searchParams = useSearchParams();
     const [intents, setIntents] = useState<PaymentIntent[]>([]);
     const [payouts, setPayouts] = useState<Payout[]>([]);
     const [posOrders, setPosOrders] = useState<any[]>([]);
     const [sumUpConnected, setSumUpConnected] = useState(false);
+    const [mpConnected, setMpConnected] = useState(false);
     const [loading, setLoading] = useState(true);
     const [summary, setSummary] = useState({
         totalRevenue: 0,
@@ -125,6 +130,17 @@ export default function PaymentsPage() {
                 const sumupMeta = await getDoc(doc(db, "stores", storeId!, "integrations", "sumup"));
                 setSumUpConnected(sumupMeta.exists() && sumupMeta.data()?.enabled === true);
 
+                // Mercado Pago connection status
+                const mpMeta = await getDoc(doc(db, "stores", storeId!, "integrations", "mercadopago"));
+                setMpConnected(mpMeta.exists() && mpMeta.data()?.enabled === true);
+
+                // Check for connection success query param
+                if (searchParams.get("mp_connected") === "true") {
+                    toast.success("¡Mercado Pago conectado exitosamente!");
+                    // Remove param silently
+                    window.history.replaceState(null, '', window.location.pathname);
+                }
+
             } catch (err) {
                 console.error("Payments load error:", err);
             } finally {
@@ -179,11 +195,11 @@ export default function PaymentsPage() {
                 <CardContent>
                     <div className="flex flex-wrap gap-3">
                         {[
-                            { name: "Stripe", region: "Internacional", status: "active" },
-                            { name: "Webpay", region: "Chile", status: "active" },
-                            { name: "MercadoPago", region: "LATAM", status: "active" },
-                            { name: "Flow", region: "Chile", status: "beta" },
-                            { name: "SumUp POS", region: "Lector físico", status: sumUpConnected ? "active" : "inactive" },
+                            { name: "Stripe", region: "Internacional", status: "active", static: true },
+                            { name: "Webpay", region: "Chile", status: "active", static: true },
+                            { name: "MercadoPago", region: "LATAM", status: mpConnected ? "active" : "inactive", isMp: true },
+                            { name: "Flow", region: "Chile", status: "beta", static: true },
+                            { name: "SumUp POS", region: "Lector físico", status: sumUpConnected ? "active" : "inactive", static: true },
                         ].map(psp => (
                             <div key={psp.name} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border bg-card text-sm">
                                 <div className={`h-2 w-2 rounded-full ${
@@ -193,8 +209,24 @@ export default function PaymentsPage() {
                                 }`} />
                                 <span className="font-semibold">{psp.name}</span>
                                 <span className="text-muted-foreground text-xs">{psp.region}</span>
-                                {psp.status === "beta" && <Badge variant="secondary" className="text-[10px] h-4">Beta</Badge>}
-                                {psp.status === "inactive" && <Badge variant="outline" className="text-[10px] h-4 border-muted-foreground/30">No conectado</Badge>}
+                                
+                                {psp.status === "beta" && <Badge variant="secondary" className="text-[10px] h-4 ml-1">Beta</Badge>}
+                                
+                                {/* Static connections without oauth logic yet */}
+                                {psp.static && psp.status === "inactive" && <Badge variant="outline" className="text-[10px] h-4 border-muted-foreground/30 ml-1">No conectado</Badge>}
+                                
+                                {/* Interactive MP connection */}
+                                {psp.isMp && (
+                                    psp.status === "active" ? (
+                                        <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600 border-none text-[10px] h-4 ml-1">Conectado</Badge>
+                                    ) : (
+                                        <Button variant="outline" size="sm" className="h-6 text-xs ml-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white border-blue-500" asChild>
+                                            <Link href={`/api/payments/mercadopago/connect?storeId=${storeId}`}>
+                                                Conectar
+                                            </Link>
+                                        </Button>
+                                    )
+                                )}
                             </div>
                         ))}
                     </div>
@@ -378,5 +410,18 @@ export default function PaymentsPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function PaymentsPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex items-center justify-center min-h-[50vh] text-muted-foreground">
+                <RefreshCw className="h-6 w-6 animate-spin mr-3" />
+                Cargando panel de pagos...
+            </div>
+        }>
+            <PaymentsDashboard />
+        </Suspense>
     );
 }
