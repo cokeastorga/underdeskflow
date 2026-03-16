@@ -1,4 +1,4 @@
-export type OrderStatus = "OPEN" | "PAYMENT_PENDING" | "PAID" | "FULFILLED" | "CANCELLED" | "REFUNDED";
+export type OrderStatus = "OPEN" | "PAYMENT_PENDING" | "PAID" | "FULFILLED" | "CANCELLED" | "REFUNDED" | "DISPUTED" | "CHARGEBACK";
 export type OrderChannel = "POS" | "WEB" | "SHOPIFY" | "MERCADOLIBRE" | "RAPPI" | "UBEREATS";
 
 export interface Order {

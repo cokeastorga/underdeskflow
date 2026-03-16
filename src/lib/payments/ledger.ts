@@ -274,6 +274,58 @@ export function buildPayoutFailedTransaction(
     };
 }
 
+/**
+ * Generates the ledger transaction for a lost Chargeback.
+ * Reverses both the Merchant's payout balance and the Platform's commission,
+ * effectively pulling the money back into the PSP pending bucket (which is then drained by the PSP).
+ */
+export function buildChargebackDeductedTransaction(
+    intent: PaymentIntent,
+    referenceId: string
+): LedgerTransaction {
+    const amount = intent.amount;
+    const feeReversal = intent.commission?.fee ?? 0;
+    const netReversal = amount - feeReversal;
+
+    const entries: LedgerEntry[] = [
+        {
+            id: uuidv4(),
+            account: "payoutable_balance",
+            amount: netReversal,
+            type: "DEBIT",
+            currency: intent.currency,
+        },
+        {
+            id: uuidv4(),
+            account: "platform_commissions",
+            amount: feeReversal,
+            type: "DEBIT",
+            currency: intent.currency,
+        },
+        {
+            id: uuidv4(),
+            account: "psp_pending",
+            amount: -amount,
+            type: "CREDIT",
+            currency: intent.currency,
+        },
+    ];
+
+    validateTransaction(entries);
+
+    return {
+        id: uuidv4(),
+        payment_intent_id: intent.id,
+        store_id: intent.store_id,
+        reference_id: referenceId,
+        order_source: "OWN_STORE", // Inherited from the original transaction
+        type: "CHARGEBACK_DEDUCTED",
+        description: `Chargeback deduction for order ${intent.order_id}`,
+        entries,
+        created_at: Date.now(),
+    };
+}
+
 /** Invariant check: ensure the transaction is balanced (sums to zero). */
 function validateTransaction(entries: LedgerEntry[]): void {
     const sum = entries.reduce((acc, e) => acc + e.amount, 0);

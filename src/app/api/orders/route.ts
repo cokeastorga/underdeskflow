@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase/admin-config";
 import { createOrder, addOrderItem, updateOrderStatus } from "@/domains/orders/services.server";
-import { getStock } from "@/domains/inventory/services.server";
+import { getStock, reserveStock, releaseStockReservation } from "@/domains/inventory/services.server";
+import { appendFinancialEvent } from "@/domains/pos/events";
 import { OrderChannel } from "@/domains/orders/types";
 
 /** 
@@ -54,7 +55,7 @@ export async function POST(req: NextRequest) {
         // ── Pre-flight Stock Validation (If Branch is Known) ───────────────────
         if (branchId) {
             for (const item of items) {
-                const stock = await getStock(storeId, item.variantId || item.productId, branchId); // Fallback to productId if variantId missing in payload
+                const stock = await getStock(storeId, item.variantId || item.productId, branchId);
                 if (stock < item.qty) {
                     return NextResponse.json({ 
                         error: `Insufficient stock for "${item.name}". Available: ${stock}` 
@@ -83,6 +84,25 @@ export async function POST(req: NextRequest) {
             });
         }
 
+        // ── 2.5 Atomic Stock Reservation (If Branch is Known) ─────────────────
+        if (branchId) {
+            const reservedItems = [];
+            try {
+                for (const item of items) {
+                    await reserveStock(storeId, item.variantId || item.productId, branchId, item.qty, order.id);
+                    reservedItems.push(item);
+                }
+            } catch (err: any) {
+                // Rollback any successfully reserved items
+                for (const rItem of reservedItems) {
+                    await releaseStockReservation(storeId, rItem.variantId || rItem.productId, branchId, rItem.qty, order.id);
+                }
+                // Cancel the order since it failed atomic reservation
+                await updateOrderStatus(order.id, storeId, "CANCELLED");
+                return NextResponse.json({ error: err.message }, { status: 422 });
+            }
+        }
+
         // ── 3. Mark Idempotency ────────────────────────────────────────────────
         await idxRef.set({ orderId: order.id, storeId, createdAt: Date.now() });
 
@@ -94,6 +114,21 @@ export async function POST(req: NextRequest) {
             try {
                 // This triggers the inventory descent!
                 await updateOrderStatus(order.id, storeId, "PAID", createdByUserId);
+
+                if (cashSessionId && branchId && registerId) {
+                    const total = items.reduce((acc: number, item: any) => acc + (item.qty * item.price), 0) - discount;
+                    await appendFinancialEvent({
+                        storeId,
+                        branchId,
+                        registerId,
+                        sessionId: cashSessionId,
+                        type: "SALE_PAID",
+                        amount: total,
+                        notes: `POS Sale ${order.id} via ${paymentMethod}`,
+                        userId: createdByUserId,
+                        referenceId: order.id
+                    });
+                }
             } catch (err: any) {
                 console.error("Payment status transition failed:", err);
                 // Return success on order, but note payment issue

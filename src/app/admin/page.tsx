@@ -2,18 +2,23 @@ import { StatCard } from "@/components/admin/StatCard";
 import { DollarSign, ShoppingCart, AlertTriangle, Package } from "lucide-react";
 import { ActivationWizard } from "@/components/admin/ActivationWizard";
 import { ActivationStatus, ActivationSteps } from "@/domains/tenants/types";
+import { getFinancialAnalytics } from "@/domains/analytics/services.server";
+import { FinancialStats } from "@/components/admin/dashboard/FinancialStats";
 
 function fmt(amount: number) {
     return new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP", minimumFractionDigits: 0 }).format(amount);
 }
 
 export default async function AdminDashboard() {
-    // In Production this would await something like:
-    // const stats = await getDashboardStats(tenantId)
-    // using Firestore aggregation counts or the `sales.ts` Worker aggregation doc.
+    // Demo Hardcoded tenant. 
+    // In Production this comes from auth: e.g. const auth = await getSession(); auth.storeId 
+    const storeId = "SntHndq7Bv9n2cM82kG0"; // "Delicias Porteñas" demo store
+
+    const financials = await getFinancialAnalytics(storeId);
+
     const stats = {
-        salesToday: 0,
-        ordersToday: 0,
+        salesToday: financials.grossSales, // Quick alias mapped to the new analytics service
+        ordersToday: financials.orderCount,
         lowStock: 0,
         products: 1 // The demo product we provisioned during signup
     };
@@ -30,19 +35,26 @@ export default async function AdminDashboard() {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-2xl font-bold tracking-tight">Dashboard Operativo</h1>
+                <h1 className="text-2xl font-bold tracking-tight">Dashboard Financiero y Operativo</h1>
                 <p className="text-muted-foreground">Bienvenido al Retail OS. Administra tu negocio desde este centro de mando.</p>
             </div>
 
             {mockActivationStatus === "PENDING" && (
-                <div className="mb-8">
+                <div className="mb-6">
                     <ActivationWizard status={mockActivationStatus} steps={mockActivationSteps} />
                 </div>
             )}
 
+            {/* Financial Overview / Payout Visibility */}
+            <FinancialStats 
+                grossSales={financials.grossSales}
+                platformFees={financials.platformFees}
+                netSales={financials.grossSales - financials.platformFees} 
+            />
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard 
-                    title="Ventas de Hoy" 
+                    title="Ventas Acumuladas" 
                     value={fmt(stats.salesToday)} 
                     icon={<DollarSign />} 
                     trend="up"

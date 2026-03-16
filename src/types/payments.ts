@@ -12,7 +12,10 @@ export type PaymentStatus =
     | "PARTIALLY_REFUNDED"     // Has at least one partial refund; more may follow
     | "FAILED"
     | "CANCELED"
-    | "REFUNDED";              // Full refund complete (terminal)
+    | "REFUNDED"               // Full refund complete (terminal)
+    | "DISPUTED"               // Payment challenged by cardholder
+    | "CHARGEBACK"             // Dispute lost, money forcefully withdrawn
+    | "CHARGEBACK_WON";        // Dispute won, money re-credited
 
 // ── ACCOUNTING LEDGER (Double-Entry) ────────────────────────────────────────
 
@@ -55,6 +58,7 @@ export interface LedgerTransaction {
     | "PAYMENT_PAID"
     | "EXTERNAL_ORDER_RECEIVED"  // Order from external channel — no platform fee
     | "REFUND_SUCCEEDED"
+    | "CHARGEBACK_DEDUCTED"      // Dispute lost — Platform + Tenant funds reversed
     | "COMMISSION_REVERSAL"
     | "PAYOUT_REQUESTED"
     | "PAYOUT_PROCESSING"
@@ -230,6 +234,9 @@ export type OutboxEventType =
     | "PAYMENT_CANCELED"
     | "PAYMENT_REFUNDED"
     | "PAYMENT_PARTIALLY_REFUNDED"
+    | "PAYMENT_DISPUTED"
+    | "PAYMENT_CHARGEBACK"
+    | "PAYMENT_CHARGEBACK_WON"
     | "PAYOUT_REQUESTED"       // Trigger for bank transfer execution
     | "PAYOUT_FAILED"          // Notification for operations
     | "LEDGER_SYNC";           // For accounting exports

@@ -1,5 +1,5 @@
 export type InventoryLocationType = "FACTORY" | "BRANCH";
-export type InventoryMovementType = "SALE" | "TRANSFER_IN" | "TRANSFER_OUT" | "RETURN" | "ADJUSTMENT" | "PRODUCTION";
+export type InventoryMovementType = "SALE" | "TRANSFER_IN" | "TRANSFER_OUT" | "RETURN" | "ADJUSTMENT" | "PRODUCTION" | "RESERVED" | "RESERVATION_RELEASED";
 
 export interface InventoryMovement {
     id: string; // e.g., inv_mov_123

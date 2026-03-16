@@ -68,7 +68,7 @@ export interface PaymentProviderAdapter {
     /**
      * Reconcile: Query current status of a payment intent directly from PSP.
      */
-    queryStatus(providerIntentId: string): Promise<StatusResult>;
+    queryStatus(providerIntentId: string, tenantConfig?: any): Promise<StatusResult>;
 
     /**
      * Reconcile: Query current status of a refund directly from PSP.

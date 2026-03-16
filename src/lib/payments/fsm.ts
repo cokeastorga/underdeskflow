@@ -11,15 +11,18 @@ export const ALLOWED_TRANSITIONS: Record<PaymentStatus, Set<PaymentStatus>> = {
     CREATED: new Set(["PENDING", "CANCELED"]),
     PENDING: new Set(["AUTHORIZED", "PAID", "FAILED", "CANCELED"]),
     AUTHORIZED: new Set(["PAID", "FAILED", "CANCELED"]),
-    PAID: new Set(["REFUNDED", "PARTIALLY_REFUNDED"]),
-    PARTIALLY_REFUNDED: new Set(["REFUNDED", "PARTIALLY_REFUNDED"]), // self-loop for multiple partials
+    PAID: new Set(["REFUNDED", "PARTIALLY_REFUNDED", "DISPUTED", "CHARGEBACK"]),
+    PARTIALLY_REFUNDED: new Set(["REFUNDED", "PARTIALLY_REFUNDED", "DISPUTED", "CHARGEBACK"]), // self-loop for multiple partials
+    DISPUTED: new Set(["CHARGEBACK", "CHARGEBACK_WON"]),
+    CHARGEBACK: new Set(),         // Terminal
+    CHARGEBACK_WON: new Set(),     // Terminal
     FAILED: new Set(),   // Terminal
     CANCELED: new Set(),   // Terminal
     REFUNDED: new Set(),   // Terminal
 };
 
 // PARTIALLY_REFUNDED is NOT terminal — more refunds may follow until REFUNDED.
-export const TERMINAL_STATES = new Set<PaymentStatus>(["FAILED", "CANCELED", "REFUNDED"]);
+export const TERMINAL_STATES = new Set<PaymentStatus>(["FAILED", "CANCELED", "REFUNDED", "CHARGEBACK", "CHARGEBACK_WON"]);
 
 /** States that can accept a refund operation */
 export const REFUNDABLE_STATES = new Set<PaymentStatus>(["PAID", "PARTIALLY_REFUNDED"]);
@@ -72,6 +75,9 @@ export function statusToOutboxEvent(status: PaymentStatus): OutboxEventType | nu
         CANCELED: "PAYMENT_CANCELED",
         REFUNDED: "PAYMENT_REFUNDED",
         PARTIALLY_REFUNDED: "PAYMENT_PARTIALLY_REFUNDED",
+        DISPUTED: "PAYMENT_DISPUTED",
+        CHARGEBACK: "PAYMENT_CHARGEBACK",
+        CHARGEBACK_WON: "PAYMENT_CHARGEBACK_WON",
     };
     return map[status] ?? null;
 }

@@ -9,12 +9,16 @@ import {
     ShoppingCart,
     Tags,
     Settings,
-    Store
+    Store,
+    Truck,
+    ChefHat,
 } from "lucide-react";
 
 const NAV_ITEMS = [
     { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
     { name: "Órdenes", href: "/admin/orders", icon: ShoppingCart },
+    { name: "Despachos", href: "/admin/fulfillments", icon: Truck },
+    { name: "Cocina / KDS", href: "/admin/kds", icon: ChefHat },
     { name: "Catálogo", href: "/admin/products", icon: PackageSearch },
     { name: "Inventario", href: "/admin/inventory", icon: Boxes },
     { name: "Reglas de Precio", href: "/admin/pricing", icon: Tags },

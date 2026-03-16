@@ -6,10 +6,11 @@ import { toast } from "sonner";
 import { useRef, useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { CreditCard, Wallet, Loader2, Tag, X, Zap, Truck, Store, MapPin } from "lucide-react";
-import { addDoc, collection, query, where, getDocs, updateDoc, increment, doc } from "firebase/firestore";
+import { addDoc, collection, query, where, getDocs, updateDoc, increment, doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { Coupon } from "@/types";
 import { formatPrice } from "@/lib/utils/currency";
+import { initMercadoPago, Payment } from '@mercadopago/sdk-react';
 
 export default function CheckoutPage() {
     const { items, totalPrice, clearCart } = useCart();
@@ -39,6 +40,10 @@ export default function CheckoutPage() {
     const router = useRouter();
     const webpayFormRef = useRef<HTMLFormElement>(null);
 
+    // Store & Brick State
+    const [storeData, setStoreData] = useState<any>(null);
+    const [brickData, setBrickData] = useState<{ intentId: string; orderId: string; total: number } | null>(null);
+
     // Delivery & Locations State
     const [deliveryMethod, setDeliveryMethod] = useState<"shipping" | "pickup">("shipping");
     const [selectedCarrier, setSelectedCarrier] = useState<"chilexpress" | "blue" | null>(null);
@@ -53,7 +58,18 @@ export default function CheckoutPage() {
                 const snap = await getDocs(q);
                 setLocations(snap.docs.map(d => ({ id: d.id, ...d.data() })));
             };
+            const fetchStore = async () => {
+                const storeSnap = await getDoc(doc(db, "stores", storeId));
+                if (storeSnap.exists()) {
+                    setStoreData(storeSnap.data());
+                    const pk = storeSnap.data().payment_config?.mercadopago?.public_key;
+                    if (pk) {
+                        initMercadoPago(pk, { locale: 'es-CL' });
+                    }
+                }
+            };
             fetchLocations();
+            fetchStore();
         }
     }, [storeId]);
 
@@ -295,10 +311,14 @@ export default function CheckoutPage() {
                     throw new Error(errorData.error || "Error al iniciar el pago");
                 }
 
-                const { client_url, client_secret } = await response.json();
+                const { payment_intent_id, client_url, client_secret } = await response.json();
 
-                if (client_url) {
-                    // Redirect to Webpay, Flow, or MP
+                if (selectedProvider === "mercadopago") {
+                    setBrickData({ intentId: payment_intent_id, orderId: orderRef.id, total });
+                    setLoading(false);
+                    return; // Enter stage 2 (Bricks)
+                } else if (client_url) {
+                    // Redirect to Webpay, Flow
                     window.location.href = client_url;
                 } else if (client_secret && selectedProvider === "stripe") {
                     // Handle Stripe Elements (would need additional implementation)
@@ -317,6 +337,63 @@ export default function CheckoutPage() {
             await createPendingOrder(formData);
         }
     };
+
+    if (brickData) {
+        return (
+            <div className="min-h-screen bg-muted/30 py-16">
+                <div className="max-w-xl mx-auto bg-white p-8 rounded-xl shadow-sm border relative min-h-[500px]">
+                    <h2 className="text-2xl font-bold mb-6 text-center">
+                        Finalizar Pago de {formatPrice(brickData.total)}
+                    </h2>
+                    
+                    {loading && (
+                        <div className="absolute inset-0 bg-white/70 z-10 flex items-center justify-center rounded-xl backdrop-blur-sm">
+                            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                        </div>
+                    )}
+                    
+                    <Payment
+                        initialization={{ amount: brickData.total }}
+                        customization={{
+                            paymentMethods: {
+                                ticket: "all",
+                                bankTransfer: "all",
+                                creditCard: "all",
+                                debitCard: "all",
+                                mercadoPago: "all",
+                            },
+                        }}
+                        onSubmit={async ({ selectedPaymentMethod, formData }) => {
+                            setLoading(true);
+                            try {
+                                const res = await fetch(`/api/payments/intents/${brickData.intentId}/confirm`, {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify(formData)
+                                });
+                                const data = await res.json();
+                                
+                                if (data.success && data.status === "approved") {
+                                    clearCart(storeId);
+                                    router.push(`/${storeId}/order-success?id=${brickData.orderId}`);
+                                } else if (data.success && data.status === "in_process") {
+                                    clearCart(storeId);
+                                    toast.info("Pago en proceso...");
+                                    router.push(`/${storeId}/order-success?id=${brickData.orderId}`);
+                                } else {
+                                    toast.error("Pago rechazado. Intenta con otra tarjeta.");
+                                    setLoading(false);
+                                }
+                            } catch (e: any) {
+                                toast.error("Error validando el pago");
+                                setLoading(false);
+                            }
+                        }}
+                    />
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-muted/30">

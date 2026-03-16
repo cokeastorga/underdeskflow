@@ -1,6 +1,7 @@
 import { adminDb } from "@/lib/firebase/admin-config";
 import { Order, OrderItem, OrderStatus, OrderChannel } from "./types";
-import { recordMovement } from "@/domains/inventory/services.server";
+import { recordMovement, confirmStockReservation, releaseStockReservation } from "@/domains/inventory/services.server";
+import { createOrderFulfillment } from "@/domains/fulfillment/services.server";
 
 const ordersCol = adminDb.collection("orders");
 const orderItemsCol = adminDb.collection("order_items");
@@ -142,17 +143,24 @@ export async function updateOrderStatus(orderId: string, storeId: string, newSta
         const itemsSnap = await orderItemsCol.where("orderId", "==", orderId).get();
         for (const doc of itemsSnap.docs) {
             const item = doc.data() as OrderItem;
-            await recordMovement(
+            // The item was previously reserved during Checkout. Confirm it now without double-deduction.
+            await confirmStockReservation(
                 storeId,
                 item.variantId,
                 orderData.branchId, // Assuming POS/Branch context
-                "BRANCH",
-                "SALE",
-                -item.quantity, // Deducting
-                userId,
-                orderId,
-                `Sale from Order ${orderId}`
+                item.quantity, 
+                orderId
             );
+        }
+        
+        // Auto-provision Fulfillment for the paid items
+        try {
+            // Determine type by channel (POS = PICKUP, else LOCAL_DELIVERY)
+            const fType = orderData.channel === "POS" ? "PICKUP" : "LOCAL_DELIVERY";
+            const mappedItems = itemsSnap.docs.map(doc => doc.data() as OrderItem);
+            await createOrderFulfillment(orderData, mappedItems, fType);
+        } catch (fErr) {
+            console.error("Failed to provision fulfillment", fErr);
         }
         
         // --- 🚀 FIRE ASYNC WORKER EVENT ---
@@ -163,5 +171,20 @@ export async function updateOrderStatus(orderId: string, storeId: string, newSta
                  sourceChannel: orderData.channel
              });
         }).catch(err => console.error("Failed to load Event Bus dynamically", err));
+    }
+    
+    // Fallback Rollback Sequence for failed checkouts/expirations
+    if (newStatus === "CANCELLED" && orderData.branchId && (orderData.status === "OPEN" || orderData.status === "PAYMENT_PENDING")) {
+        const itemsSnap = await orderItemsCol.where("orderId", "==", orderId).get();
+        for (const doc of itemsSnap.docs) {
+            const item = doc.data() as OrderItem;
+            await releaseStockReservation(
+                storeId,
+                item.variantId,
+                orderData.branchId,
+                item.quantity, 
+                orderId
+            );
+        }
     }
 }

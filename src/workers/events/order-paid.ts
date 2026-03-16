@@ -1,5 +1,6 @@
 import { adminDb } from "@/lib/firebase/admin-config";
 import { logger } from "@/lib/logger";
+import { sendCustomerReceipt, sendTenantNewSaleAlert } from "@/lib/notifications/email";
 
 export interface OrderPaidPayload {
     orderId: string;
@@ -26,8 +27,18 @@ export async function handleOrderPaid(payload: OrderPaidPayload, requestId?: str
         }
         
         const order = orderSnap.data()!;
+
+        // 2. Fetch Store Details for the Receipts
+        const storeSnap = await adminDb.collection("stores").doc(storeId).get();
+        const storeData = storeSnap.data() || { name: "Tienda", email: "contacto@udf.cl" };
         
-        // 2. Perform async long-running tasks
+        // 3. Dispatch Async Emails (Non-blocking)
+        Promise.all([
+            sendCustomerReceipt(order, storeData.name, requestId),
+            sendTenantNewSaleAlert(order, storeData.email, requestId)
+        ]).catch((e) => logger.error("Non-fatal email dispatch failure", { requestId, error: e }));
+
+        // 4. Perform further async long-running tasks
         // await updateSalesAnalytics(storeId, order);
         // await syncOrderToChannels(storeId, order);
         

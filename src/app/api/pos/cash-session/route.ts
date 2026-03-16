@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase/admin-config";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
+import { appendFinancialEvent } from "@/domains/pos/events";
 
 /**
  * Cash Session Management API (Global / Multi-Branch)
@@ -66,6 +67,17 @@ export async function POST(req: NextRequest) {
             updatedAt: now,
         });
 
+        await appendFinancialEvent({
+            storeId,
+            branchId,
+            registerId,
+            sessionId: sessionRef.id,
+            type: "SESSION_OPENED",
+            amount: openingAmount,
+            notes: "Session Opened",
+            userId: openedByUserId,
+        });
+
         return NextResponse.json({ sessionId: sessionRef.id }, { status: 201 });
     } catch (err: any) {
         console.error("[Cash Session POST]", err);
@@ -87,6 +99,7 @@ export async function PATCH(req: NextRequest) {
             return NextResponse.json({ error: "Session not found" }, { status: 404 });
         }
 
+        const data = snap.data()!;
         const now = Timestamp.now();
 
         if (action === "withdrawal") {
@@ -96,12 +109,23 @@ export async function PATCH(req: NextRequest) {
                 withdrawals: FieldValue.arrayUnion({ amount, note, by, at: now }),
                 updatedAt: now,
             });
+
+            await appendFinancialEvent({
+                storeId,
+                branchId: data.branchId,
+                registerId: data.registerId,
+                sessionId,
+                type: "WITHDRAWAL",
+                amount: -Math.abs(amount), // Negative to indicate output
+                notes: note || "Manual Withdrawal",
+                userId: by, // Assuming 'by' is the user ID or name submitted
+            });
+
             return NextResponse.json({ success: true });
         }
 
         if (action === "close") {
             const { closingAmount, closedBy } = payload;
-            const data = snap.data()!;
             const expectedCash =
                 (data.openingAmount ?? 0) +
                 (data.totalSales ?? 0) -
@@ -116,6 +140,18 @@ export async function PATCH(req: NextRequest) {
                 closedBy,
                 updatedAt: now,
             });
+
+            await appendFinancialEvent({
+                storeId,
+                branchId: data.branchId,
+                registerId: data.registerId,
+                sessionId,
+                type: "SESSION_CLOSED",
+                amount: closingAmount,
+                notes: `Session Closed. Expected: ${expectedCash}, Diff: ${difference}`,
+                userId: closedBy,
+            });
+
             return NextResponse.json({ success: true, difference });
         }
 

@@ -21,7 +21,9 @@ import {
 import {
     buildPaymentPaidTransaction,
     buildRefundSucceededTransaction,
+    buildChargebackDeductedTransaction,
 } from "./ledger";
+import { updateOrderStatus } from "@/domains/orders/services.server";
 import {
     isValidTransition,
     isRefundable,
@@ -51,6 +53,7 @@ import { adapterRegistry } from "./registry";
 import { circuitBreakerRegistry } from "./circuit-breaker";
 import { Metrics } from "./metrics";
 import { financialGuard } from "./guard";
+import { scrubPci } from "./adapters/base";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -238,6 +241,66 @@ export class PaymentOrchestrator {
         }
     }
 
+    async confirmPayment(intentId: string, formData: any): Promise<any> {
+        const intent = await findIntentById(intentId);
+        if (!intent) throw new OrchestratorError("INTENT_NOT_FOUND", { intentId });
+
+        const storeSnap = await adminDb.collection("stores").doc(intent.store_id).get();
+        const mpConfig = storeSnap.data()?.payment_config?.mercadopago;
+
+        if (!mpConfig?.access_token) {
+            throw new Error("Missing tenant access_token for Mercado Pago.");
+        }
+
+        const adapter = adapterRegistry.get(intent.provider);
+        if (typeof (adapter as any).confirmPayment !== "function") {
+            throw new OrchestratorError("INVALID_TRANSITION", { reason: "Provider does not support direct sync confirmation." });
+        }
+
+        try {
+            const attemptStart = Date.now();
+            const result = await (adapter as any).confirmPayment(intent, formData, mpConfig.access_token);
+
+            // Synchronous FSM State Update based on the immediate response of the checkout API
+            if (result.status === "approved") {
+                const ledgerTx = buildPaymentPaidTransaction(intent, result.id.toString());
+                await transitionStatus(intent, "PAID", result.id.toString(), { raw_status: result.status }, "system", ledgerTx);
+            } else if (result.status === "rejected") {
+                await transitionStatus(intent, "FAILED", result.id.toString(), { raw_status: result.status }, "system");
+            } else {
+                await transitionStatus(intent, "PENDING", result.id.toString(), { raw_status: result.status }, "system");
+            }
+
+            await saveAttempt({
+                payment_intent_id: intent.id,
+                provider: intent.provider,
+                provider_attempt_id: result.id?.toString(),
+                status_raw: result.status,
+                request_payload: { formData: scrubPci(formData) },
+                response_payload: { result_status: result.status },
+                http_status: 200,
+                error_code: null,
+                error_message: null,
+                duration_ms: Date.now() - attemptStart,
+                created_at: attemptStart,
+            });
+
+            return result;
+        } catch (err: any) {
+             Metrics.paymentFailed({
+                 store_id: intent.store_id,
+                 intent_id: intent.id,
+                 provider: intent.provider,
+                 amount: intent.amount,
+                 currency: intent.currency,
+                 code: "PROVIDER_INIT_FAILED",
+                 reason: err.message
+             });
+             await transitionStatus(intent, "FAILED", null, { error: err.message }, "system");
+             throw err;
+        }
+    }
+
     async processWebhook(
         provider: SupportedProvider,
         rawBody: Buffer,
@@ -282,6 +345,8 @@ export class PaymentOrchestrator {
                     || refunds.filter(r => r.status === "PENDING").pop();
 
                 if (refund) ledgerTx = buildRefundSucceededTransaction(intent, refund);
+            } else if (parsed.normalized_status === "CHARGEBACK") {
+                ledgerTx = buildChargebackDeductedTransaction(intent, parsed.provider_event_id);
             }
 
             await transitionStatus(intent, parsed.normalized_status, parsed.provider_event_id, {
@@ -289,6 +354,12 @@ export class PaymentOrchestrator {
                 amount: parsed.amount,
                 currency: parsed.currency,
             }, "provider", ledgerTx);
+
+            if (["PAID", "DISPUTED", "CHARGEBACK"].includes(parsed.normalized_status)) {
+                await updateOrderStatus(intent.order_id, intent.store_id, parsed.normalized_status as any, "system_webhook").catch(err => {
+                    log("error", "webhook.order_sync_failed", { order_id: intent.order_id, error: err.message });
+                });
+            }
 
             return { status: "processed" };
         } catch (err) {
@@ -304,13 +375,23 @@ export class PaymentOrchestrator {
         let ledgerTx: LedgerTransaction | undefined;
         if (event.normalized_status === "PAID") {
             ledgerTx = buildPaymentPaidTransaction(intent, event.provider_event_id);
+        } else if (event.normalized_status === "CHARGEBACK") {
+            ledgerTx = buildChargebackDeductedTransaction(intent, event.provider_event_id);
         }
 
-        return transitionStatus(intent, event.normalized_status, event.provider_event_id, {
+        const finalIntent = await transitionStatus(intent, event.normalized_status, event.provider_event_id, {
             raw_status: event.raw_status,
             amount: event.amount,
             currency: event.currency,
         }, source, ledgerTx);
+
+        if (["PAID", "DISPUTED", "CHARGEBACK"].includes(event.normalized_status)) {
+            await updateOrderStatus(intent.order_id, intent.store_id, event.normalized_status as any, "system_reconciliation").catch(err => {
+                log("error", "reconciliation.order_sync_failed", { order_id: intent.order_id, error: err.message });
+            });
+        }
+
+        return finalIntent;
     }
 
     async refund(intentId: string, request: RefundRequest, operatorUid: string): Promise<RefundResult> {

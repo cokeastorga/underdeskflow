@@ -69,6 +69,46 @@ export class MercadoPagoAdapter implements PaymentProviderAdapter {
         };
     }
 
+    /**
+     * Enterprise Checkout API (Bricks) integration.
+     * Takes the tokenized card from the frontend and charges it,
+     * applying the split payment (Application Fee) to UDF's account.
+     */
+    async confirmPayment(intent: PaymentIntent, formData: any, tenantAccessToken: string): Promise<any> {
+        // Initialize an isolated SDK client using the specific tenant's Access Token
+        const tenantClient = new MercadoPagoConfig({ 
+            accessToken: tenantAccessToken,
+            options: { timeout: 10_000 }
+        });
+        
+        const payment = new Payment(tenantClient);
+
+        // Platform Fee (Commission) calculated by the Orchestrator at intent creation
+        const platformFee = intent.commission?.fee ?? 0;
+
+        // Execute the charge with Split Payment
+        const result = await payment.create({
+            body: {
+                transaction_amount: formData.transaction_amount,
+                token: formData.token, // Token generated securely by the MP Brick
+                description: `Orden ${intent.order_id}`,
+                installments: formData.installments,
+                payment_method_id: formData.payment_method_id,
+                issuer_id: formData.issuer_id,
+                payer: {
+                    email: formData.payer?.email,
+                    identification: formData.payer?.identification
+                },
+                // Application Fee -> Routed to UnderDeskFlow's Master Account
+                application_fee: platformFee, 
+                external_reference: intent.id,
+            },
+            requestOptions: { idempotencyKey: `mp-confirm-${intent.id}` },
+        });
+
+        return result;
+    }
+
     async queryPaymentStatus(providerIntentId: string): Promise<ProviderStatus> {
         const payments = new Payment(mpClient);
         const payment = await payments.get({ id: providerIntentId });
@@ -160,11 +200,11 @@ export class MercadoPagoAdapter implements PaymentProviderAdapter {
             "authorized": "AUTHORIZED",
             "in_process": "PENDING",
             "pending": "PENDING",
-            "in_mediation": "PENDING",
+            "in_mediation": "DISPUTED",
             "rejected": "FAILED",
             "cancelled": "CANCELED",
             "refunded": "REFUNDED",
-            "charged_back": "REFUNDED",
+            "charged_back": "CHARGEBACK",
         };
         return map[rawStatus] ?? "FAILED";
     }
@@ -211,8 +251,8 @@ export class MercadoPagoAdapter implements PaymentProviderAdapter {
         };
     }
 
-    async queryStatus(providerIntentId: string): Promise<StatusResult> {
-        const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN ?? "";
+    async queryStatus(providerIntentId: string, tenantConfig?: any): Promise<StatusResult> {
+        const accessToken = tenantConfig?.access_token || process.env.MERCADOPAGO_ACCESS_TOKEN || "";
         const res = await fetch(`https://api.mercadopago.com/v1/payments/${providerIntentId}`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
@@ -233,10 +273,11 @@ export class MercadoPagoAdapter implements PaymentProviderAdapter {
             "approved": "PAID",
             "pending": "PENDING",
             "in_process": "PENDING",
+            "in_mediation": "DISPUTED",
             "rejected": "FAILED",
             "cancelled": "CANCELED",
             "refunded": "REFUNDED",
-            "charged_back": "REFUNDED",
+            "charged_back": "CHARGEBACK",
         };
 
         return {
