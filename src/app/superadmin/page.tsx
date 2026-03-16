@@ -1,9 +1,11 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, Landmark, Store, BarChart, PlusCircle, Building } from "lucide-react";
+import { DollarSign, Landmark, Store, BarChart, PlusCircle, Building, AlertCircle } from "lucide-react";
 import { getSuperAdminAnalytics } from "@/domains/analytics/services.server";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 
 function formatCurrency(amount: number) {
     return new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP", minimumFractionDigits: 0 }).format(amount);
@@ -49,6 +51,21 @@ export default async function SuperAdminDashboard() {
             <Suspense fallback={<div className="h-24 bg-muted/20 animate-pulse rounded-xl my-6" />}>
                 <SuperAdminActions />
             </Suspense>
+
+            {analytics.storesMissingMp && analytics.storesMissingMp.length > 0 && (
+                <Alert variant="destructive" className="bg-red-500/10 border-red-500/20 text-red-600 dark:text-red-400">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Atención: Tenants Desvinculados</AlertTitle>
+                    <AlertDescription>
+                        Los siguientes tenants no han completado el flujo OAuth de Mercado Pago y no podrán procesar pagos en su E-commerce:
+                        <ul className="list-disc ml-5 mt-2 text-xs">
+                            {analytics.storesMissingMp.map((s: any) => (
+                                <li key={s.id}>{s.name} <span className="text-muted-foreground opacity-70">({s.id})</span></li>
+                            ))}
+                        </ul>
+                    </AlertDescription>
+                </Alert>
+            )}
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 {/* Ingresos de Plataforma (Fees 8%) */}
@@ -112,21 +129,55 @@ export default async function SuperAdminDashboard() {
                 </Card>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7 pt-4">
-                <Card className="col-span-4">
+            <div className="grid gap-4 pt-4">
+                <Card className="col-span-full">
                     <CardHeader>
-                        <CardTitle>Auditoría de Liquidaciones: Platform Fees vs Paid Orders</CardTitle>
+                        <CardTitle>Últimos Pagos Globales</CardTitle>
                     </CardHeader>
-                    <CardContent className="h-[300px] flex items-center justify-center text-muted-foreground border-t bg-muted/10 rounded-b-xl border-x border-b">
-                        Gráfico de reconciliación de comisiones retenidas
-                    </CardContent>
-                </Card>
-                <Card className="col-span-3">
-                    <CardHeader>
-                        <CardTitle>Tenants de Alto Rendimiento</CardTitle>
-                    </CardHeader>
-                    <CardContent className="h-[300px] flex items-center justify-center text-muted-foreground border-t bg-muted/10 rounded-b-xl border-x border-b">
-                        Top 5 Tiendas por GMV
+                    <CardContent>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="border-b text-muted-foreground text-xs text-left">
+                                        <th className="py-3 font-medium">Tenant ID</th>
+                                        <th className="py-3 font-medium">PSP</th>
+                                        <th className="py-3 font-medium text-right">Monto Bruto</th>
+                                        <th className="py-3 font-medium text-right">UDF Fee (8%)</th>
+                                        <th className="py-3 font-medium pl-4">Estado</th>
+                                        <th className="py-3 font-medium text-right">Fecha</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-border">
+                                    {analytics.latestPayments?.map((p: any, i: number) => (
+                                        <tr key={i} className="hover:bg-muted/30 transition-colors">
+                                            <td className="py-3 font-mono text-xs text-muted-foreground">{p.storeId?.substring(0, 10)}...</td>
+                                            <td className="py-3 capitalize text-xs">
+                                                <Badge variant="secondary" className="text-[10px] font-normal">{p.provider || "mercadopago"}</Badge>
+                                            </td>
+                                            <td className="py-3 font-semibold text-right">{formatCurrency(p.amount)}</td>
+                                            <td className="py-3 font-semibold text-emerald-600 dark:text-emerald-400 text-right">
+                                                +{formatCurrency(p.platformFee)}
+                                            </td>
+                                            <td className="py-3 pl-4">
+                                                <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-600 border-none">
+                                                    {p.status}
+                                                </Badge>
+                                            </td>
+                                            <td className="py-3 text-xs text-muted-foreground text-right">
+                                                {new Date(p.createdAt).toLocaleString("es-CL", { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {(!analytics.latestPayments || analytics.latestPayments.length === 0) && (
+                                        <tr>
+                                            <td colSpan={6} className="py-8 text-center text-muted-foreground">
+                                                No hay pagos recientes registrados.
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </CardContent>
                 </Card>
             </div>
