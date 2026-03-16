@@ -1,9 +1,37 @@
+import { Suspense } from "react";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, Landmark, Store, BarChart } from "lucide-react";
+import { DollarSign, Landmark, Store, BarChart, PlusCircle, Building } from "lucide-react";
 import { getSuperAdminAnalytics } from "@/domains/analytics/services.server";
+import { Button } from "@/components/ui/button";
 
 function formatCurrency(amount: number) {
     return new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP", minimumFractionDigits: 0 }).format(amount);
+}
+
+// Suspense-wrapped action component to satisfy the Next.js static renderer safely
+function SuperAdminActions() {
+    return (
+        <div className="flex flex-wrap gap-4 mt-6 mb-8 bg-card border border-border rounded-xl p-6 shadow-sm">
+            <div className="flex-1">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <Building className="h-5 w-5 text-primary" />
+                    Gestión de Tenants
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                    No tienes tiendas asociadas a esta cuenta o necesitas crear un nuevo tenant para un cliente.
+                </p>
+            </div>
+            <div className="flex items-center gap-3">
+                <Link href="/tenant/onboarding">
+                    <Button size="lg" className="w-full sm:w-auto shadow-md hover:scale-[1.02] transition-transform">
+                        <PlusCircle className="mr-2 h-5 w-5" />
+                        Crear Nueva Tienda
+                    </Button>
+                </Link>
+            </div>
+        </div>
+    );
 }
 
 export default async function SuperAdminDashboard() {
@@ -17,6 +45,10 @@ export default async function SuperAdminDashboard() {
                     Visión global de los ingresos SaaS, GMV y estado de salud de todos los tenants.
                 </p>
             </div>
+
+            <Suspense fallback={<div className="h-24 bg-muted/20 animate-pulse rounded-xl my-6" />}>
+                <SuperAdminActions />
+            </Suspense>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 {/* Ingresos de Plataforma (Fees 8%) */}
