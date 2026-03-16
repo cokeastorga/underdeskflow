@@ -1,63 +1,132 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { collection, query, where, onSnapshot, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, CheckCircle2, ArrowRight } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ArrowRight, MapPin } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Product } from "@/types";
+
+interface InventoryBalance {
+    id: string;
+    variantId: string;
+    locationId: string;
+    stock: number;
+    // Denormalized fields (written by transferStock / receiving)
+    variantName?: string;
+    productName?: string;
+    sku?: string;
+    lowStockThreshold?: number;
+}
+
+interface AlertItem {
+    variantId: string;
+    variantName: string;
+    productName: string;
+    sku?: string;
+    locationId: string;
+    locationName: string;
+    stock: number;
+    threshold: number;
+}
 
 export function LowStockAlert() {
     const { storeId } = useAuth();
-    const [lowStockProducts, setLowStockProducts] = useState<Product[]>([]);
+    const [alerts, setAlerts] = useState<AlertItem[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!storeId) {
-            setLoading(false);
-            return;
-        }
+        if (!storeId) { setLoading(false); return; }
 
-        // Note: Ideally we should filter this on the server/query side, 
-        // but 'stock <= threshold' comparison where threshold is a field on the doc is hard in Firestore.
-        // So we fetch active products and filter client side for this widget (limited to recent/all? maybe limits).
-        // For scalability, we'd need a cloud function to tag products as 'lowStock: true'.
-        // For now, we fetch all products and filter. Optimisation: Limit to 100?
-
+        // ── Step 1: Subscribe to inventory_balances for this store ──────────
         const q = query(
-            collection(db, "products"),
-            where("storeId", "==", storeId),
-            where("isActive", "==", true)
+            collection(db, "inventory_balances"),
+            where("storeId", "==", storeId)
         );
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const low: Product[] = [];
-            snapshot.forEach(doc => {
-                const p = { id: doc.id, ...doc.data() } as Product;
-                const threshold = p.lowStockThreshold || 5; // Default to 5 if not set
+        const unsubscribe = onSnapshot(q, async (snapshot) => {
+            const balances = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as InventoryBalance));
 
-                let isLow = false;
-                if (p.hasVariants && p.variants) {
-                    // Check if ANY variant is low
-                    if (p.variants.some(v => v.stock <= threshold)) isLow = true;
-                } else {
-                    if ((p.stock || 0) <= threshold) isLow = true;
+            // ── Step 2: Collect variantIds not already denormalized ─────────
+            const unnamedVariantIds = [
+                ...new Set(
+                    balances
+                        .filter(b => !b.variantName && !b.productName)
+                        .map(b => b.variantId)
+                )
+            ];
+
+            // Map variantId → { name, productName, sku }
+            const variantMeta: Record<string, { name: string; productName: string; sku?: string }> = {};
+
+            if (unnamedVariantIds.length > 0) {
+                // Chunked fetch (Firestore "in" limit = 30)
+                const chunks: string[][] = [];
+                for (let i = 0; i < unnamedVariantIds.length; i += 30)
+                    chunks.push(unnamedVariantIds.slice(i, i + 30));
+
+                await Promise.all(chunks.map(async (chunk) => {
+                    const vSnap = await getDocs(
+                        query(collection(db, "variants"), where("__name__", "in", chunk))
+                    );
+                    vSnap.forEach(d => {
+                        const v = d.data();
+                        variantMeta[d.id] = {
+                            name: v.name ?? d.id,
+                            productName: v.productName ?? v.name ?? d.id,
+                            sku: v.sku,
+                        };
+                    });
+                }));
+            }
+
+            // ── Step 3: Fetch branch names once ─────────────────────────────
+            const locationIds = [...new Set(balances.map(b => b.locationId))];
+            const branchNames: Record<string, string> = {};
+
+            if (locationIds.length > 0) {
+                try {
+                    const res = await fetch(`/api/store/branches?storeId=${storeId}`);
+                    const data = await res.json();
+                    (data.branches ?? []).forEach((b: { id: string; name: string }) => {
+                        branchNames[b.id] = b.name;
+                    });
+                } catch { /* non-fatal */ }
+            }
+
+            // ── Step 4: Build alert list ─────────────────────────────────────
+            const lowItems: AlertItem[] = [];
+            for (const balance of balances) {
+                const threshold = balance.lowStockThreshold ?? 5;
+                if (balance.stock <= threshold) {
+                    const meta = variantMeta[balance.variantId];
+                    lowItems.push({
+                        variantId:    balance.variantId,
+                        variantName:  balance.variantName ?? meta?.name ?? balance.variantId,
+                        productName:  balance.productName ?? meta?.productName ?? balance.variantId,
+                        sku:          balance.sku ?? meta?.sku,
+                        locationId:   balance.locationId,
+                        locationName: branchNames[balance.locationId] ?? balance.locationId,
+                        stock:        balance.stock,
+                        threshold,
+                    });
                 }
+            }
 
-                if (isLow) low.push(p);
-            });
-            setLowStockProducts(low.slice(0, 5)); // Show top 5
+            // Sort: most critical (closest to 0) first, cap at 10
+            lowItems.sort((a, b) => a.stock - b.stock);
+            setAlerts(lowItems.slice(0, 10));
             setLoading(false);
         });
 
         return () => unsubscribe();
     }, [storeId]);
 
+    // ── Loading skeleton ───────────────────────────────────────────────────
     if (loading) {
         return (
             <Card>
@@ -68,8 +137,8 @@ export function LowStockAlert() {
                 <CardContent className="space-y-4">
                     {[1, 2, 3].map(i => (
                         <div key={i} className="flex justify-between">
-                            <Skeleton className="h-4 w-[120px]" />
-                            <Skeleton className="h-4 w-[40px]" />
+                            <Skeleton className="h-4 w-[160px]" />
+                            <Skeleton className="h-4 w-[60px]" />
                         </div>
                     ))}
                 </CardContent>
@@ -84,50 +153,60 @@ export function LowStockAlert() {
                     <div>
                         <CardTitle className="flex items-center gap-2">
                             <AlertTriangle className="h-5 w-5 text-orange-500" />
-                            Alerta de Stock
+                            Alerta de Stock por Sucursal
                         </CardTitle>
-                        <CardDescription>Productos con inventario crítico.</CardDescription>
+                        <CardDescription>
+                            Balances críticos por ubicación física.
+                        </CardDescription>
                     </div>
                 </div>
             </CardHeader>
             <CardContent className="flex-1">
-                {lowStockProducts.length === 0 ? (
+                {alerts.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-center text-muted-foreground min-h-[150px]">
                         <CheckCircle2 className="h-12 w-12 text-green-500 mb-2 opacity-80" />
                         <p className="font-medium text-foreground">Todo en orden</p>
-                        <p className="text-sm">No tienes productos con bajo stock.</p>
+                        <p className="text-sm">Todas las sucursales tienen stock suficiente.</p>
                     </div>
                 ) : (
-                    <div className="space-y-4">
-                        {lowStockProducts.map(product => {
-                            // Determine display stock
-                            let stockDisplay = "";
-                            if (product.hasVariants && product.variants) {
-                                const lowVariants = product.variants.filter(v => v.stock <= (product.lowStockThreshold || 5));
-                                stockDisplay = `${lowVariants.length} variantes críticas`;
-                            } else {
-                                stockDisplay = `${product.stock} un.`;
-                            }
-
-                            return (
-                                <div key={product.id} className="flex items-center justify-between border-b pb-2 last:border-0 last:pb-0">
-                                    <div className="min-w-0 flex-1 mr-4">
-                                        <p className="text-sm font-medium truncate">{product.name}</p>
+                    <div className="space-y-3">
+                        {alerts.map((item, idx) => (
+                            <div
+                                key={`${item.variantId}-${item.locationId}-${idx}`}
+                                className="flex items-start justify-between gap-3 border-b pb-3 last:border-0 last:pb-0"
+                            >
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-semibold truncate">{item.productName}</p>
+                                    {item.sku && (
+                                        <p className="text-xs text-muted-foreground font-mono">SKU: {item.sku}</p>
+                                    )}
+                                    <div className="flex items-center gap-1 mt-0.5">
+                                        <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
+                                        <p className="text-xs text-muted-foreground truncate uppercase tracking-wide font-medium">
+                                            {item.locationName}
+                                        </p>
                                     </div>
-                                    <Badge variant="destructive" className="whitespace-nowrap">
-                                        {stockDisplay}
-                                    </Badge>
                                 </div>
-                            );
-                        })}
+                                <Badge
+                                    variant={item.stock === 0 ? "destructive" : "outline"}
+                                    className={`whitespace-nowrap shrink-0 ${
+                                        item.stock === 0
+                                            ? "bg-red-100 text-red-700 border-red-300"
+                                            : "bg-orange-50 text-orange-700 border-orange-200"
+                                    }`}
+                                >
+                                    {item.stock === 0 ? "⛔ Sin stock" : `⚠️ ${item.stock} un.`}
+                                </Badge>
+                            </div>
+                        ))}
                     </div>
                 )}
             </CardContent>
-            {lowStockProducts.length > 0 && (
+            {alerts.length > 0 && (
                 <div className="p-4 pt-0 mt-auto border-t bg-muted/20">
                     <Button variant="ghost" size="sm" className="w-full text-muted-foreground" asChild>
-                        <Link href="/tenant/products?filter=low-stock">
-                            Ver inventario completo <ArrowRight className="ml-2 h-4 w-4" />
+                        <Link href="/admin/inventory/transfers">
+                            Gestionar transferencias <ArrowRight className="ml-2 h-4 w-4" />
                         </Link>
                     </Button>
                 </div>

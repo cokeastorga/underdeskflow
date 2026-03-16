@@ -3,6 +3,16 @@
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { OrderFulfillment, FulfillmentStatus } from "@/domains/fulfillment/types";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { MapPin } from "lucide-react";
+
+interface Branch { id: string; name: string; }
 
 /**
  * Kitchen / Warehouse Display System (KDS)
@@ -13,17 +23,32 @@ export default function KDSPage() {
     const searchParams = useSearchParams();
     const storeId = searchParams.get("storeId") ?? undefined;
 
-    const [tickets, setTickets] = useState<OrderFulfillment[]>([]);
-    const [loading, setLoading] = useState(false);
+    const [tickets,   setTickets]   = useState<OrderFulfillment[]>([]);
+    const [loading,   setLoading]   = useState(false);
     const [advancing, setAdvancing] = useState<string | null>(null);
+    const [branches,  setBranches]  = useState<Branch[]>([]);
+    const [branchId,  setBranchId]  = useState<string>("ALL");
+
+    // Load branches once
+    useEffect(() => {
+        if (!storeId) return;
+        fetch(`/api/store/branches?storeId=${storeId}`)
+            .then(r => r.json())
+            .then(data => setBranches((data.branches ?? []).filter((b: Branch & { isActive?: boolean }) => b.isActive !== false)))
+            .catch(() => {});
+    }, [storeId]);
 
     const fetchTickets = useCallback(async () => {
         if (!storeId) return;
         setLoading(true);
         try {
+            const params = new URLSearchParams({ storeId });
+            if (branchId !== "ALL") params.set("branchId", branchId);
+            const baseQuery = params.toString();
+
             const [pendingRes, preparingRes] = await Promise.all([
-                fetch(`/api/fulfillments?storeId=${storeId}&status=PENDING`),
-                fetch(`/api/fulfillments?storeId=${storeId}&status=PREPARING`),
+                fetch(`/api/fulfillments?${baseQuery}&status=PENDING`),
+                fetch(`/api/fulfillments?${baseQuery}&status=PREPARING`),
             ]);
             const [pendingData, preparingData] = await Promise.all([
                 pendingRes.json(),
@@ -37,7 +62,7 @@ export default function KDSPage() {
         } finally {
             setLoading(false);
         }
-    }, [storeId]);
+    }, [storeId, branchId]);
 
     useEffect(() => {
         fetchTickets();
@@ -146,7 +171,24 @@ export default function KDSPage() {
                     <div className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse" />
                     <h1 className="text-white font-black text-3xl">🍽️ Cocina / Bodega</h1>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 flex-wrap">
+                    {/* Branch filter */}
+                    {branches.length > 0 && (
+                        <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-white/50" />
+                            <Select value={branchId} onValueChange={setBranchId}>
+                                <SelectTrigger className="bg-white/10 border-white/20 text-white text-sm rounded-xl h-10 w-52 hover:bg-white/20">
+                                    <SelectValue placeholder="Sucursal" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="ALL">🌐 Todas las sucursales</SelectItem>
+                                    {branches.map(b => (
+                                        <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
                     <div className="flex items-center gap-2 text-amber-400">
                         <span className="text-2xl font-black">{pending.length}</span>
                         <span className="text-sm">pendientes</span>

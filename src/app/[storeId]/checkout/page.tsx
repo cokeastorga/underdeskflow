@@ -11,6 +11,7 @@ import { db } from "@/lib/firebase/config";
 import { Coupon } from "@/types";
 import { formatPrice } from "@/lib/utils/currency";
 import { initMercadoPago, Payment } from '@mercadopago/sdk-react';
+import { BranchSelector } from '@/components/store/BranchSelector';
 
 export default function CheckoutPage() {
     const { items, totalPrice, clearCart } = useCart();
@@ -49,6 +50,7 @@ export default function CheckoutPage() {
     const [selectedCarrier, setSelectedCarrier] = useState<"chilexpress" | "blue" | null>(null);
     const [locations, setLocations] = useState<any[]>([]);
     const [selectedLocationId, setSelectedLocationId] = useState("");
+    const [selectedBranchId, setSelectedBranchId] = useState<string>("");
 
     // Fetch Locations if StoreId is present
     useEffect(() => {
@@ -78,6 +80,10 @@ export default function CheckoutPage() {
     }, []);
 
     if (!mounted) return null;
+
+    // Derived fulfillment config from store
+    const isPickupOnly = storeData?.fulfillment?.delivery === false && storeData?.fulfillment?.pickup === true;
+    const pickupBranchId = isPickupOnly ? selectedBranchId : (deliveryMethod === "pickup" ? selectedLocationId : "");
 
     const subtotal = totalPrice(storeId);
 
@@ -159,13 +165,13 @@ export default function CheckoutPage() {
         setLoading(true);
         try {
             const orderData = {
-                orderNumber: `#${Math.floor(100000 + Math.random() * 900000)}`, // Optional UI helper
+                orderNumber: `#${Math.floor(100000 + Math.random() * 900000)}`,
                 storeId,
                 channel: "online",
                 status: "open",
                 paymentStatus: "pending",
                 fulfillmentStatus: "unfulfilled",
-                
+                branchId: pickupBranchId || null,
                 customerName: `${formData.get('firstName')} ${formData.get('lastName')}`,
                 email: formData.get('email'),
                 phone: formData.get('phone') || '',
@@ -222,7 +228,7 @@ export default function CheckoutPage() {
 
             toast.success("Orden creada exitosamente");
             clearCart(storeId);
-            router.push(`/${storeId}/order-success?id=${docRef.id}`);
+            router.push(`/${storeId}/checkout/success?id=${docRef.id}`);
         } catch (error) {
             console.error("Error creating order:", error);
             toast.error("Error al procesar la orden");
@@ -231,9 +237,15 @@ export default function CheckoutPage() {
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        const formData = new FormData(e.currentTarget);
+            const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+
+    // Guard: pickup-only stores must have a branch selected
+    if (isPickupOnly && !selectedBranchId) {
+        toast.error("Debes seleccionar una sucursal de retiro para continuar.");
+        return;
+    }
 
         if (paymentMethod === "card" || paymentMethod === "wallet") {
             setLoading(true);
@@ -246,6 +258,7 @@ export default function CheckoutPage() {
                     paymentStatus: "pending",
                     fulfillmentStatus: "unfulfilled",
                     
+                    branchId: pickupBranchId || null,
                     customerName: `${formData.get('firstName')} ${formData.get('lastName')}`,
                     email: formData.get('email'),
                     phone: formData.get('phone') || '',
@@ -318,7 +331,7 @@ export default function CheckoutPage() {
                     setLoading(false);
                     return; // Enter stage 2 (Bricks)
                 } else if (client_url) {
-                    // Redirect to Webpay, Flow
+                    // Redirect to Webpay, Flow — they will return to /checkout/success
                     window.location.href = client_url;
                 } else if (client_secret && selectedProvider === "stripe") {
                     // Handle Stripe Elements (would need additional implementation)
@@ -375,11 +388,11 @@ export default function CheckoutPage() {
                                 
                                 if (data.success && data.status === "approved") {
                                     clearCart(storeId);
-                                    router.push(`/${storeId}/order-success?id=${brickData.orderId}`);
+                                    router.push(`/${storeId}/checkout/success?id=${brickData.orderId}`);
                                 } else if (data.success && data.status === "in_process") {
                                     clearCart(storeId);
                                     toast.info("Pago en proceso...");
-                                    router.push(`/${storeId}/order-success?id=${brickData.orderId}`);
+                                    router.push(`/${storeId}/checkout/success?id=${brickData.orderId}`);
                                 } else {
                                     toast.error("Pago rechazado. Intenta con otra tarjeta.");
                                     setLoading(false);
@@ -438,76 +451,46 @@ export default function CheckoutPage() {
                                 </div>
                             </div>
 
-                            <div className="space-y-4 pt-4 border-t">
-                                <label className="text-sm font-medium">Método de Entrega</label>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <button
-                                        type="button"
-                                        onClick={() => setDeliveryMethod("shipping")}
-                                        className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${deliveryMethod === "shipping" ? "border-primary bg-primary/5 shadow-sm" : "border-muted bg-background hover:border-muted-foreground/30"}`}
-                                    >
-                                        <Truck className={`h-6 w-6 mb-2 ${deliveryMethod === "shipping" ? "text-primary" : "text-muted-foreground"}`} />
-                                        <span className="text-sm font-semibold">Envío a Domicilio</span>
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setDeliveryMethod("pickup")}
-                                        className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${deliveryMethod === "pickup" ? "border-primary bg-primary/5 shadow-sm" : "border-muted bg-background hover:border-muted-foreground/30"}`}
-                                    >
-                                        <Store className={`h-6 w-6 mb-2 ${deliveryMethod === "pickup" ? "text-primary" : "text-muted-foreground"}`} />
-                                        <span className="text-sm font-semibold">Retiro en Tienda</span>
-                                    </button>
+                            {/* ── Delivery / Pickup Section ─────────────────────────────── */}
+                            {isPickupOnly ? (
+                                /* PICKUP-ONLY STORE: BranchSelector replaces all shipping UI */
+                                <div className="space-y-4 pt-4 border-t">
+                                    <BranchSelector
+                                        storeId={storeId}
+                                        value={selectedBranchId}
+                                        onChange={setSelectedBranchId}
+                                    />
+                                    <p className="text-xs text-muted-foreground bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                                        🏪 Esta tienda solo ofrece <strong>Retiro en Sucursal</strong>. No realizamos envíos a domicilio.
+                                    </p>
                                 </div>
-                            </div>
-
-                            {deliveryMethod === "shipping" && (
-                                <div className="space-y-4 pt-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium">Calle / Avenida</label>
-                                            <input name="street" required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium">Número</label>
-                                            <input name="number" required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2" />
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium">Depto / Casa / Oficina (Opcional)</label>
-                                        <input name="apartment" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2" />
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium">Comuna</label>
-                                            <input name="commune" required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium">Región</label>
-                                            <select name="region" required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2">
-                                                <option value="">Seleccionar Región</option>
-                                                <option value="RM">Región Metropolitana</option>
-                                                <option value="XV">Arica y Parinacota</option>
-                                                <option value="I">Tarapacá</option>
-                                                <option value="II">Antofagasta</option>
-                                                <option value="III">Atacama</option>
-                                                <option value="IV">Coquimbo</option>
-                                                <option value="V">Valparaíso</option>
-                                                <option value="VI">O'Higgins</option>
-                                                <option value="VII">Maule</option>
-                                                <option value="XVI">Ñuble</option>
-                                                <option value="VIII">Biobío</option>
-                                                <option value="IX">Araucanía</option>
-                                                <option value="XIV">Los Ríos</option>
-                                                <option value="X">Los Lagos</option>
-                                                <option value="XI">Aysén</option>
-                                                <option value="XII">Magallanes</option>
-                                            </select>
-                                        </div>
+                            ) : (
+                                <div className="space-y-4 pt-4 border-t">
+                                    <label className="text-sm font-medium">Método de Entrega</label>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <button
+                                            type="button"
+                                            onClick={() => setDeliveryMethod("shipping")}
+                                            className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${deliveryMethod === "shipping" ? "border-primary bg-primary/5 shadow-sm" : "border-muted bg-background hover:border-muted-foreground/30"}`}
+                                        >
+                                            <Truck className={`h-6 w-6 mb-2 ${deliveryMethod === "shipping" ? "text-primary" : "text-muted-foreground"}`} />
+                                            <span className="text-sm font-semibold">Envío a Domicilio</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setDeliveryMethod("pickup")}
+                                            className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${deliveryMethod === "pickup" ? "border-primary bg-primary/5 shadow-sm" : "border-muted bg-background hover:border-muted-foreground/30"}`}
+                                        >
+                                            <Store className={`h-6 w-6 mb-2 ${deliveryMethod === "pickup" ? "text-primary" : "text-muted-foreground"}`} />
+                                            <span className="text-sm font-semibold">Retiro en Tienda</span>
+                                        </button>
                                     </div>
                                 </div>
                             )}
 
-                            {deliveryMethod === "shipping" && (
+                            {/* ── Full-mode only: shipping address form ─────────────────── */}
+                            {!isPickupOnly && deliveryMethod === "shipping" && (
+
                                 <div className="space-y-4 pt-4 border-t animate-in fade-in slide-in-from-top-2 duration-300">
                                     <label className="text-sm font-medium flex items-center justify-between">
                                         Empresa de Trasporte

@@ -61,7 +61,8 @@ export default function CheckoutSuccessPage() {
 
     useEffect(() => {
         const verifyOrder = async () => {
-            const queryOrderId = searchParams.get("order_id") || searchParams.get("external_reference");
+            // Checkout pushes ?id=, MP returns ?external_reference=
+            const queryOrderId = searchParams.get("id") || searchParams.get("external_reference");
 
             if (!queryOrderId) {
                 // Determine if this is a WebPay redirect (POST converted to GET?) or just missing param
@@ -99,8 +100,8 @@ export default function CheckoutSuccessPage() {
                     // Sync Customer (Always)
                     await syncOrderToCustomer(orderData);
 
-                    // Clear Cart (Always)
-                    clearCart();
+                    // Clear Cart (Always — scoped to this store)
+                    clearCart(storeId);
 
                     // Decrement Stock (Always - Reserve stock)
                     if (orderData.items) {
@@ -114,7 +115,7 @@ export default function CheckoutSuccessPage() {
                 }
 
                 setStatus("success");
-                clearCart(); // Ensure cart is cleared even if already paid (idempotent)
+                clearCart(storeId); // Idempotent — scoped clear
 
             } catch (error) {
                 console.error("Error verifying order", error);

@@ -3,6 +3,14 @@
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { OrderFulfillment, FulfillmentStatus } from "@/domains/fulfillment/types";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { MapPin } from "lucide-react";
 
 const COLUMNS: { status: FulfillmentStatus; label: string; color: string; icon: string }[] = [
     { status: "PENDING",         label: "Pendiente",       color: "from-slate-500 to-slate-700",   icon: "🕐" },
@@ -84,20 +92,35 @@ function FulfillmentCard({
     );
 }
 
+interface Branch { id: string; name: string; }
+
 export default function FulfillmentsKanbanPage() {
     const searchParams = useSearchParams();
     const storeId = searchParams.get("storeId") ?? undefined;
 
     const [fulfillments, setFulfillments] = useState<OrderFulfillment[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [advancing, setAdvancing] = useState<string | null>(null);
-    const [error, setError] = useState<string | null>(null);
+    const [loading,      setLoading]      = useState(false);
+    const [advancing,    setAdvancing]    = useState<string | null>(null);
+    const [error,        setError]        = useState<string | null>(null);
+    const [branches,     setBranches]     = useState<Branch[]>([]);
+    const [branchId,     setBranchId]     = useState<string>("ALL");
+
+    // Load branches once
+    useEffect(() => {
+        if (!storeId) return;
+        fetch(`/api/store/branches?storeId=${storeId}`)
+            .then(r => r.json())
+            .then(data => setBranches((data.branches ?? []).filter((b: Branch & { isActive?: boolean }) => b.isActive !== false)))
+            .catch(() => {});
+    }, [storeId]);
 
     const fetchFulfillments = useCallback(async () => {
         if (!storeId) return;
         setLoading(true);
         try {
-            const res = await fetch(`/api/fulfillments?storeId=${storeId}`);
+            const params = new URLSearchParams({ storeId });
+            if (branchId !== "ALL") params.set("branchId", branchId);
+            const res = await fetch(`/api/fulfillments?${params.toString()}`);
             const data = await res.json();
             setFulfillments(data.fulfillments ?? []);
         } catch (e: any) {
@@ -105,7 +128,7 @@ export default function FulfillmentsKanbanPage() {
         } finally {
             setLoading(false);
         }
-    }, [storeId]);
+    }, [storeId, branchId]);
 
     useEffect(() => {
         fetchFulfillments();
@@ -144,8 +167,25 @@ export default function FulfillmentsKanbanPage() {
                     <h1 className="text-3xl font-bold text-white">📦 Panel de Despachos</h1>
                     <p className="text-white/50 mt-1 text-sm">Gestión logística de órdenes en tiempo real</p>
                 </div>
-                <div className="flex items-center gap-3">
-                    <span className="text-white/40 text-sm">{fulfillments.length} despachos activos</span>
+                <div className="flex items-center gap-3 flex-wrap">
+                    {/* Branch filter */}
+                    {branches.length > 0 && (
+                        <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-white/50" />
+                            <Select value={branchId} onValueChange={setBranchId}>
+                                <SelectTrigger className="bg-white/10 border-white/20 text-white text-sm rounded-xl h-9 w-52 hover:bg-white/20">
+                                    <SelectValue placeholder="Sucursal" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="ALL">🌐 Todas las sucursales</SelectItem>
+                                    {branches.map(b => (
+                                        <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
+                    <span className="text-white/40 text-sm">{fulfillments.length} despachos</span>
                     <button
                         onClick={fetchFulfillments}
                         disabled={loading}

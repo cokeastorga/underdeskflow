@@ -12,6 +12,7 @@ import {
     Store,
     Truck,
     ChefHat,
+    ArrowRightLeft,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -21,6 +22,7 @@ const NAV_ITEMS = [
     { name: "Cocina / KDS", href: "/admin/kds", icon: ChefHat },
     { name: "Catálogo", href: "/admin/products", icon: PackageSearch },
     { name: "Inventario", href: "/admin/inventory", icon: Boxes },
+    { name: "Transferencias", href: "/admin/inventory/transfers", icon: ArrowRightLeft },
     { name: "Reglas de Precio", href: "/admin/pricing", icon: Tags },
     { name: "Cajas (POS)", href: "/admin/registers", icon: Store },
     { name: "Configuración", href: "/admin/settings", icon: Settings },
