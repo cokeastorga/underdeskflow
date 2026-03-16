@@ -13,9 +13,13 @@ import {
     Truck,
     ChefHat,
     ArrowRightLeft,
+    Building,
+    BarChart,
+    Activity,
+    ShieldAlert
 } from "lucide-react";
 
-const NAV_ITEMS = [
+const ADMIN_NAV_ITEMS = [
     { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
     { name: "Órdenes", href: "/admin/orders", icon: ShoppingCart },
     { name: "Despachos", href: "/admin/fulfillments", icon: Truck },
@@ -28,8 +32,18 @@ const NAV_ITEMS = [
     { name: "Configuración", href: "/admin/settings", icon: Settings },
 ];
 
+const SUPERADMIN_NAV_ITEMS = [
+    { name: "Panorama", href: "/superadmin", icon: BarChart },
+    { name: "Tenants", href: "/superadmin/tenants", icon: Building },
+    { name: "Salud SaaS", href: "/superadmin/health", icon: Activity },
+    { name: "Auditoría", href: "/superadmin/audit", icon: ShieldAlert },
+    { name: "Configuración", href: "/superadmin/settings", icon: Settings },
+];
+
 export function AdminSidebar() {
     const pathname = usePathname();
+    const isSuperAdmin = pathname.startsWith("/superadmin");
+    const activeNavItems = isSuperAdmin ? SUPERADMIN_NAV_ITEMS : ADMIN_NAV_ITEMS;
 
     return (
         <aside className="w-64 border-r border-border bg-card flex flex-col h-full shrink-0">
@@ -38,8 +52,8 @@ export function AdminSidebar() {
             </div>
             
             <nav className="p-4 space-y-1 overflow-y-auto flex-1">
-                {NAV_ITEMS.map((item) => {
-                    const isActive = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href));
+                {activeNavItems.map((item) => {
+                    const isActive = pathname === item.href || (item.href !== (isSuperAdmin ? "/superadmin" : "/admin") && pathname.startsWith(item.href));
                     const Icon = item.icon;
                     return (
                         <Link

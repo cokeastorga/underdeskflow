@@ -1,15 +1,24 @@
 import { PackageSearch, ArrowLeftRight } from "lucide-react";
 import Link from "next/link";
-
-const STORE_ID = "store_1";
+import { getVerifiedStore } from "@/lib/auth/get-verified-store";
+import { adminDb } from "@/lib/firebase/admin-config";
 
 export default async function AdminInventoryPage() {
-    // In Production: const balances = await getInventoryBalances(STORE_ID);
-    const balances = [
-        { id: "bal_1", productName: "Empanada de Pino", sku: "EMP-PINO", branchName: "Sucursal Centro", qty: 45 },
-        { id: "bal_2", productName: "Coca Cola Zero 500ml", sku: "CCZ-500", branchName: "Sucursal Centro", qty: 12 },
-        { id: "bal_3", productName: "Pie de Limón", sku: "PIE-LIM", branchName: "Fábrica Principal", qty: 100 },
-    ];
+    const { storeId } = await getVerifiedStore();
+    
+    // Fetch live inventory balances from variants
+    const variantsSnap = await adminDb.collection("variants").where("storeId", "==", storeId).get();
+    
+    const balances = variantsSnap.docs.map(doc => {
+        const data = doc.data();
+        return {
+            id: doc.id,
+            productName: data.name || "Variante",
+            sku: data.sku || doc.id.slice(-6),
+            branchName: "Bodega Principal", // Since we haven't built multi-location yet
+            qty: data.stock || 0
+        };
+    });
 
     return (
         <div className="space-y-6">

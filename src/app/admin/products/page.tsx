@@ -1,12 +1,10 @@
 import { getProducts } from "@/domains/catalog/services.server";
 import { PackagePlus, Search } from "lucide-react";
 import Link from "next/link";
-
-// Using a hardcoded storeId for demonstration (e.g. Delicias Porteñas).
-// In Production: const storeId = await getTenantIdFromSession();
-const STORE_ID = "store_1";
+import { getVerifiedStore } from "@/lib/auth/get-verified-store";
 
 export default async function AdminProductsPage() {
+    const { storeId: STORE_ID } = await getVerifiedStore();
     const products = await getProducts(STORE_ID);
 
     return (
