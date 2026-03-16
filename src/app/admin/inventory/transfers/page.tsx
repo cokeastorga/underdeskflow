@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { getAuth } from "firebase/auth";
@@ -53,7 +53,7 @@ async function getToken(): Promise<string | null> {
     return user ? user.getIdToken() : null;
 }
 
-export default function TransferStockPage() {
+export function TransferStockForm() {
     const searchParams = useSearchParams();
     const storeId = searchParams.get("storeId") ?? "";
 
@@ -344,5 +344,18 @@ export default function TransferStockPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function TransferStockPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex items-center justify-center min-h-[40vh] text-muted-foreground p-6">
+                <Loader2 className="h-6 w-6 animate-spin mr-3" />
+                Cargando módulo de transferencias...
+            </div>
+        }>
+            <TransferStockForm />
+        </Suspense>
     );
 }
