@@ -53,14 +53,50 @@ export interface SuperAdminFinancials {
  * UDF Central SuperAdmin aggregation. 
  * Extracts total Gross Merchandising Value (GMV) and UDF collected platform fees across all tenants.
  * Optimized with .limit() to prevent runaway reads in Firebase.
+ * Includes FAILED_PRECONDITION fallback: if the composite index for (status, created_at) isn't ready,
+ * we fetch without orderBy and sort in memory so the dashboard never crashes.
  */
 export async function getSuperAdminAnalytics(): Promise<SuperAdminFinancials> {
-    // 1. Fetch the latest 500 PAID payment intents to calculate recent GMV / Fees safely without unbounded cost
-    const recentPaymentsSnap = await adminDb.collection("payment_intents")
-        .where("status", "==", "PAID")
-        .orderBy("created_at", "desc")
-        .limit(500)
-        .get();
+    // 1. Fetch the latest 500 PAID payment intents — with index fallback
+    let recentPaymentsSnap: FirebaseFirestore.QuerySnapshot;
+
+    try {
+        // Requires composite index: payment_intents [status ASC, created_at DESC]
+        recentPaymentsSnap = await adminDb.collection("payment_intents")
+            .where("status", "==", "PAID")
+            .orderBy("created_at", "desc")
+            .limit(500)
+            .get();
+    } catch (err: any) {
+        const isMissingIndex =
+            err?.code === 9 || // gRPC FAILED_PRECONDITION
+            err?.message?.includes("FAILED_PRECONDITION") ||
+            err?.message?.includes("index");
+
+        if (isMissingIndex) {
+            console.warn("[SuperAdmin] Composite index not ready — falling back to in-memory sort. Create index: payment_intents[status ASC, created_at DESC].");
+            // Fetch without orderBy, then sort client-side
+            const fallbackSnap = await adminDb.collection("payment_intents")
+                .where("status", "==", "PAID")
+                .limit(500)
+                .get();
+            
+            // Sort in-memory by created_at descending
+            const sortedDocs = [...fallbackSnap.docs].sort((a, b) => {
+                const aTs = a.data().created_at ?? 0;
+                const bTs = b.data().created_at ?? 0;
+                return (typeof bTs === "number" ? bTs : bTs?.toMillis?.() ?? 0) -
+                       (typeof aTs === "number" ? aTs : aTs?.toMillis?.() ?? 0);
+            });
+            
+            // Build a minimal QuerySnapshot-compatible object for the rest of the function
+            recentPaymentsSnap = { ...fallbackSnap, docs: sortedDocs, size: sortedDocs.length } as any;
+        } else {
+            // Unknown error — surface it so we don't silently swallow real bugs
+            throw err;
+        }
+    }
+
 
     let globalGmv = 0;
     let globalPlatformFees = 0;

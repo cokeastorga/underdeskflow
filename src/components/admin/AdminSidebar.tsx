@@ -13,13 +13,11 @@ import {
     Truck,
     ChefHat,
     ArrowRightLeft,
-    Building,
-    BarChart,
-    Activity,
-    ShieldAlert
 } from "lucide-react";
 
-const ADMIN_NAV_ITEMS = [
+// AdminSidebar is exclusively for the Brick & Mortar /admin panel.
+// The SuperAdmin HQ panel uses SuperAdminSidebar instead.
+const NAV_ITEMS = [
     { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
     { name: "Órdenes", href: "/admin/orders", icon: ShoppingCart },
     { name: "Despachos", href: "/admin/fulfillments", icon: Truck },
@@ -32,46 +30,36 @@ const ADMIN_NAV_ITEMS = [
     { name: "Configuración", href: "/admin/settings", icon: Settings },
 ];
 
-const SUPERADMIN_NAV_ITEMS = [
-    { name: "Panorama", href: "/superadmin", icon: BarChart },
-    { name: "Tenants", href: "/superadmin/tenants", icon: Building },
-    { name: "Salud SaaS", href: "/superadmin/health", icon: Activity },
-    { name: "Auditoría", href: "/superadmin/audit", icon: ShieldAlert },
-    { name: "Configuración", href: "/superadmin/settings", icon: Settings },
-];
-
 export function AdminSidebar() {
     const pathname = usePathname();
-    const isSuperAdmin = pathname.startsWith("/superadmin");
-    const activeNavItems = isSuperAdmin ? SUPERADMIN_NAV_ITEMS : ADMIN_NAV_ITEMS;
 
     return (
         <aside className="w-64 border-r border-border bg-card flex flex-col h-full shrink-0">
             <div className="h-16 flex items-center px-6 border-b border-border">
                 <span className="font-bold text-lg tracking-tight">UnderDesk OS</span>
             </div>
-            
+
             <nav className="p-4 space-y-1 overflow-y-auto flex-1">
-                {activeNavItems.map((item) => {
-                    const isActive = pathname === item.href || (item.href !== (isSuperAdmin ? "/superadmin" : "/admin") && pathname.startsWith(item.href));
+                {NAV_ITEMS.map((item) => {
+                    const isActive = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href));
                     const Icon = item.icon;
                     return (
                         <Link
                             key={item.href}
                             href={item.href}
                             className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
-                                isActive 
-                                ? "bg-primary/10 text-primary" 
-                                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                                isActive
+                                    ? "bg-primary/10 text-primary"
+                                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                             }`}
                         >
                             <Icon className="h-4 w-4" />
                             {item.name}
                         </Link>
-                    )
+                    );
                 })}
             </nav>
-            
+
             <div className="p-4 border-t border-border mt-auto">
                 <div className="text-xs text-muted-foreground px-3">
                     Retail OS Panel v1.0
