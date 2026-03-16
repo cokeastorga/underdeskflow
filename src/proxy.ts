@@ -79,9 +79,10 @@ export async function proxy(req: NextRequest) {
         }
     } catch (err) {
         console.error('Middleware: Edge domain lookup failed', err);
-        // Fail-safe: Instead of returning a forced 500 rewrite, let the request pass through.
-        // If it's a storefront request, it might 404 naturally, but it won't crash the middleware.
-        return NextResponse.next();
+        // Fail-closed: If the Edge lookup crashes or times out for a custom domain, 
+        // we must explicitly block it rather than letting it fall back to the root app router,
+        // which would expose the root topology.
+        return NextResponse.rewrite(new URL('/404-domain', req.url));
     }
 
     return NextResponse.next();

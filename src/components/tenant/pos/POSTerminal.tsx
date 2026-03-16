@@ -124,32 +124,66 @@ export function POSTerminal({ cashSessionId }: { cashSessionId?: string }) {
         setLoadingProducts(true);
 
         const loadProducts = async () => {
-            let q;
-            if (activeCategory === "Favoritos") {
-                q = query(
-                    collection(db, "stores", storeId, "products"),
-                    where("isFavorite", "==", true),
-                    orderBy("name"),
-                    fsLimit(50)
-                );
-            } else {
-                q = query(
-                    collection(db, "stores", storeId, "products"),
-                    where("category", "==", activeCategory),
-                    orderBy("name"),
-                    fsLimit(50)
-                );
-            }
+             try {
+                // 1. Fetch Products
+                let pQuery;
+                if (activeCategory === "Favoritos") {
+                    pQuery = query(collection(db, "stores", storeId, "products"), where("isFavorite", "==", true), orderBy("name"), fsLimit(50));
+                } else {
+                    pQuery = query(collection(db, "stores", storeId, "products"), where("categoryId", "==", activeCategory), orderBy("name"), fsLimit(50));
+                }
+                
+                const productDocs = await getDocs(pQuery);
+                if (productDocs.empty) {
+                    setProducts([]);
+                    return;
+                }
+                
+                const baseProducts = productDocs.docs.map(d => ({ id: d.id, ...d.data() }));
 
-            try {
-                const snap = await getDocs(q);
-                setProducts(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Product)));
+                // 2. Fetch Variants for these products to get price & stock (in batches of 30 due to Firestore limits)
+                // For a heavily normalized DB, variants live in a subcollection or root collection `variants` where storeId == storeId
+                // Since `POSTerminal` needs fast loads, we fetch the default variants for the loaded products
+                
+                const productIds = baseProducts.map((p: any) => p.id);
+                // Chunk to 30 for 'in' query limits
+                const chunks = [];
+                for (let i = 0; i < productIds.length; i += 30) {
+                     chunks.push(productIds.slice(i, i + 30));
+                }
+                
+                let allVariants: any[] = [];
+                for (const chunk of chunks) {
+                     const vQuery = query(collection(db, "stores", storeId, "variants"), where("productId", "in", chunk));
+                     const vDocs = await getDocs(vQuery);
+                     allVariants = [...allVariants, ...vDocs.docs.map(d => ({ id: d.id, ...d.data() }))];
+                }
+                
+                // 3. Hydrate UI Products with base variant data
+                // In a real POS, if a product has multiple variants, clicking it opens a modal.
+                // For this MVP fix, we take the standard/first variant to represent the card.
+                const hydratedProducts = baseProducts.map((p: any) => {
+                     const myVariants = allVariants.filter(v => v.productId === p.id);
+                     const baseV = myVariants[0] || { basePrice: 0, stock: 0 };
+                     return {
+                          id: p.id,
+                          name: p.name,
+                          price: baseV.basePrice || baseV.price || 0, // Fallback fields
+                          stock: baseV.stock >= 0 ? baseV.stock : 999, // Fallback if inventory is disabled
+                          category: p.categoryId,
+                          imageUrl: p.imageUrl,
+                          isFavorite: p.isFavorite
+                     } as Product;
+                });
+                
+                setProducts(hydratedProducts);
             } catch (err) {
                 console.error("Product load error:", err);
             } finally {
                 setLoadingProducts(false);
             }
         };
+        
         loadProducts();
     }, [storeId, activeCategory, searchQuery]);
 
