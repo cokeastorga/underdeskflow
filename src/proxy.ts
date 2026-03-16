@@ -48,7 +48,13 @@ export async function proxy(req: NextRequest) {
     // At this point the request is coming from a custom domain like 'deliciasportenas.cl'.
     // Fetch the storeId mapping from our Edge-friendly API (cached 60s via Next.js Data Cache).
     try {
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
+        const vercelHost = process.env.VERCEL_URL;
+        
+        let appUrl = process.env.NEXT_PUBLIC_APP_URL;
+        if (!appUrl) {
+            appUrl = vercelHost ? `${protocol}://${vercelHost}` : 'http://localhost:3000';
+        }
 
         const mappingRes = await fetch(
             `${appUrl}/api/edge/domain-lookup?hostname=${hostname}`,
@@ -73,7 +79,9 @@ export async function proxy(req: NextRequest) {
         }
     } catch (err) {
         console.error('Middleware: Edge domain lookup failed', err);
-        return NextResponse.rewrite(new URL('/500', req.url));
+        // Fail-safe: Instead of returning a forced 500 rewrite, let the request pass through.
+        // If it's a storefront request, it might 404 naturally, but it won't crash the middleware.
+        return NextResponse.next();
     }
 
     return NextResponse.next();
