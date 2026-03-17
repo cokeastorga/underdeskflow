@@ -10,8 +10,8 @@ export async function getSubscription(tenantId: string): Promise<Subscription> {
         // Default to Basic plan for new/unconfigured tenants
         return {
             id: tenantId,
-            planId: "BASIC",
-            status: "ACTIVE",
+            planId: "Basic",
+            status: "active",
             currentPeriodEnd: Date.now() + 30 * 24 * 60 * 60 * 1000,
             cancelAtPeriodEnd: false,
             updatedAt: Date.now()

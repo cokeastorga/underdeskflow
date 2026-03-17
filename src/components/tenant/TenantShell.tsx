@@ -30,7 +30,7 @@ export function TenantShell({
 }: {
     children: React.ReactNode;
 }) {
-    const { user, storeId } = useAuth();
+    const { user, storeId, role } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
     const [store, setStore] = useState<any>(null);
@@ -129,78 +129,83 @@ export function TenantShell({
                         Panel Principal
                     </p>
                 </div>
-                <NavLink href="/tenant" icon={LayoutDashboard}>Escritorio</NavLink>
+                {role !== "cashier" && <NavLink href="/tenant" icon={LayoutDashboard}>Escritorio</NavLink>}
+                
                 <NavLink href="/tenant/pos" icon={MonitorSmartphone}>
                     <span className="flex items-center gap-2 w-full">
                         POS / Venta Directa
-                        <span className="ml-auto text-[9px] font-bold uppercase tracking-wide bg-blue-500/20 text-blue-400 border border-blue-500/30 px-1 py-0.5 rounded">Nuevo</span>
+                        <span className="ml-auto text-[9px] font-bold uppercase tracking-wide bg-blue-500/20 text-blue-400 border border-blue-500/30 px-1 py-0.5 rounded">Venta</span>
                     </span>
                 </NavLink>
-                <NavLink href="/tenant/products" icon={Package}>
-                    <span className="flex items-center gap-2 w-full">
-                        Productos
-                        {conflictCount > 0 && (
-                            <span className="ml-auto bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full animate-pulse">
-                                {conflictCount}
+
+                {role !== "cashier" && (
+                    <>
+                        <NavLink href="/tenant/products" icon={Package}>
+                            <span className="flex items-center gap-2 w-full">
+                                Productos
+                                {conflictCount > 0 && (
+                                    <span className="ml-auto bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full animate-pulse">
+                                        {conflictCount}
+                                    </span>
+                                )}
                             </span>
-                        )}
-                    </span>
-                </NavLink>
-                <NavLink href="/tenant/categories" icon={LayoutGrid}>Categorías</NavLink>
-                <NavLink href="/tenant/inventory" icon={ClipboardList}>Inventario</NavLink>
+                        </NavLink>
+                        <NavLink href="/tenant/categories" icon={LayoutGrid}>Categorías</NavLink>
+                        <NavLink href="/tenant/inventory" icon={ClipboardList}>Inventario</NavLink>
+                    </>
+                )}
+                
                 <NavLink href="/tenant/orders" icon={ShoppingCart}>Órdenes</NavLink>
-                <NavLink href="/tenant/customers" icon={Users}>Clientes</NavLink>
-                <NavLink href="/tenant/messages" icon={MessageCircle}>
-                    <span className="flex items-center gap-2 w-full">
-                        Mensajes
-                        <span className="ml-auto bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                            Nuevo
-                        </span>
-                    </span>
-                </NavLink>
-
-                <div className="pt-4 pb-2">
-                    <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                        Canales & Marketing
-                    </p>
-                </div>
-                <NavLink href="/tenant/channels" icon={Globe}>Mis canales</NavLink>
-                <NavLink href="/tenant/marketing" icon={Megaphone}>Campañas</NavLink>
-                <NavLink href="/tenant/channels/status" icon={Activity}>
-                    <span className="flex items-center w-full">
-                        Canales externos
-                        {(store as any)?.plan !== "enterprise" && (
-                            <span className="ml-auto text-[9px] font-bold uppercase tracking-wide bg-violet-500/20 text-violet-400 border border-violet-500/30 px-1 py-0.5 rounded">
-                                Enterprise
+                
+                {role === "tenant_admin" && (
+                    <>
+                        <NavLink href="/tenant/customers" icon={Users}>Clientes</NavLink>
+                        <NavLink href="/tenant/messages" icon={MessageCircle}>
+                            <span className="flex items-center gap-2 w-full">
+                                Mensajes
+                                <span className="ml-auto bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                                    Nuevo
+                                </span>
                             </span>
-                        )}
-                    </span>
-                </NavLink>
+                        </NavLink>
+                    </>
+                )}
+
+                {(role === "tenant_admin") && (
+                    <>
+                        <div className="pt-4 pb-2">
+                            <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                Canales & Marketing
+                            </p>
+                        </div>
+                        <NavLink href="/tenant/channels" icon={Globe}>Mis canales</NavLink>
+                        <NavLink href="/tenant/marketing" icon={Megaphone}>Campañas</NavLink>
+                        <NavLink href="/tenant/channels/status" icon={Activity}>
+                            <span className="flex items-center w-full">
+                                Canales externos
+                                {(store as any)?.planId !== "Enterprise" && (
+                                    <span className="ml-auto text-[9px] font-bold uppercase tracking-wide bg-violet-500/20 text-violet-400 border border-violet-500/30 px-1 py-0.5 rounded">
+                                        Enterprise
+                                    </span>
+                                )}
+                            </span>
+                        </NavLink>
+                    </>
+                )}
 
                 <div className="pt-4 pb-2">
                     <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                        Finanzas
+                        Finanzas & Plan
                     </p>
                 </div>
                 <NavLink href="/tenant/payments" icon={CreditCard}>Pagos</NavLink>
-                <NavLink href="/tenant/reports" icon={TrendingUp}>Reportes</NavLink>
-                <NavLink href="/tenant/analytics" icon={BarChart2}>Analytics</NavLink>
-                <NavLink href="/tenant/billing" icon={CreditCard}>Facturación</NavLink>
-
-                <div className="pt-4 pb-2">
-                    <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                        Tu Tienda Online
-                    </p>
-                </div>
-                <NavLink href="/tenant/design" icon={Palette}>Diseño & Personalización</NavLink>
-                {storeId && (
-                    <button
-                        onClick={() => window.open(`/${storeId}`, '_blank')}
-                        className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-gray-100 w-full"
-                    >
-                        <Eye className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                        Vista Previa
-                    </button>
+                {role !== "cashier" && <NavLink href="/tenant/reports" icon={TrendingUp}>Reportes</NavLink>}
+                
+                {role === "tenant_admin" && (
+                    <>
+                        <NavLink href="/tenant/billing" icon={CreditCard}>Facturación y Plan</NavLink>
+                        <NavLink href="/tenant/team" icon={Users}>Gestionar Equipo</NavLink>
+                    </>
                 )}
 
                 <div className="pt-4 pb-2">
@@ -208,8 +213,12 @@ export function TenantShell({
                         Sistema
                     </p>
                 </div>
-                <NavLink href="/tenant/settings" icon={Settings}>Configuración</NavLink>
-                <NavLink href="/tenant/settings/locations" icon={MapPin}>Sucursales</NavLink>
+                {role === "tenant_admin" && (
+                    <>
+                        <NavLink href="/tenant/settings" icon={Settings}>Configuración</NavLink>
+                        <NavLink href="/tenant/settings/locations" icon={MapPin}>Sucursales</NavLink>
+                    </>
+                )}
             </nav>
 
             <div className="p-4 border-t border-gray-200 dark:border-zinc-800 space-y-2">

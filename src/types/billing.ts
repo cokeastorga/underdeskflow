@@ -1,5 +1,5 @@
-export type PlanId = "basic" | "intermedio" | "enterprise";
-export type SubscriptionStatus = "active" | "trialing" | "past_due" | "cancelled" | "free";
+export type PlanId = "Basic" | "Pro" | "Enterprise";
+export type SubscriptionStatus = "active" | "pending" | "past_due";
 
 export interface PlanFeature {
     label: string;

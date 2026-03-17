@@ -5,9 +5,9 @@ export const FEE_VENTA_RATE = 0.08;
 
 export const PLANS: Plan[] = [
     {
-        id: "basic",
-        name: "Básico",
-        description: "Todo lo que necesitas para empezar.",
+        id: "Basic",
+        name: "Basic",
+        description: "POS Essential for small stores",
         priceMonthly: 0,
         maxStores: 1,
         maxProducts: 50,
@@ -22,24 +22,22 @@ export const PLANS: Plan[] = [
             { label: "1 tienda online propia", included: true },
             { label: "Hasta 50 productos", included: true },
             { label: "1 sucursal", included: true },
-            { label: "Ledger + payouts automáticos", included: true },
-            { label: "Envíos básicos", included: true },
-            { label: "Soporte por email (48h)", included: true },
-            { label: `Fee venta tienda propia: ${(FEE_VENTA_RATE * 100).toFixed(0)}%`, included: true },
+            { label: "Venta Directa (POS)", included: true },
+            { label: `Fee venta: ${(FEE_VENTA_RATE * 100).toFixed(0)}%`, included: true },
             { label: "Multi-sucursal", included: false },
             { label: "Analytics avanzados", included: false },
-            { label: "Canales externos (Shopify, ML…)", included: false },
+            { label: "Canales externos", included: false },
         ],
     },
     {
-        id: "intermedio",
-        name: "Intermedio",
+        id: "Pro",
+        name: "Pro",
         badge: "Más popular",
-        description: "Para negocios en crecimiento con varias sucursales.",
-        priceMonthly: 29990,
+        description: "Multi-branch & Multi-store support",
+        priceMonthly: 29000,
         maxStores: 5,
         maxProducts: 500,
-        maxLocations: 10,
+        maxLocations: 5,
         color: "blue",
         highlight: true,
         fee_venta_rate: FEE_VENTA_RATE,
@@ -49,21 +47,19 @@ export const PLANS: Plan[] = [
         features: [
             { label: "Hasta 5 tiendas propias", included: true },
             { label: "Hasta 500 productos", included: true },
-            { label: "Hasta 10 sucursales", included: true },
-            { label: "Ledger + payouts automáticos", included: true },
-            { label: "Envíos con portadores (Blue Express, Starken, etc.)", included: true },
+            { label: "Hasta 5 sucursales", included: true },
             { label: "Analytics avanzados", included: true },
-            { label: "Soporte prioritario (24h)", included: true },
-            { label: `Fee venta tienda propia: ${(FEE_VENTA_RATE * 100).toFixed(0)}%`, included: true },
-            { label: "Canales externos (Shopify, ML…)", included: false },
-            { label: "Múltiples usuarios con RBAC", included: false },
+            { label: "Soporte prioritario", included: true },
+            { label: `Fee venta: ${(FEE_VENTA_RATE * 100).toFixed(0)}%`, included: true },
+            { label: "Canales externos", included: false },
+            { label: "Sincronización multi-tienda", included: true },
         ],
     },
     {
-        id: "enterprise",
+        id: "Enterprise",
         name: "Enterprise",
-        description: "Multitienda, multicanal y soporte dedicado.",
-        priceMonthly: 99990,
+        description: "Full sync & Massive management",
+        priceMonthly: 99000,
         maxStores: -1,
         maxProducts: -1,
         maxLocations: -1,
@@ -74,46 +70,36 @@ export const PLANS: Plan[] = [
         multiLocationEnabled: true,
         advancedAnalyticsEnabled: true,
         features: [
-            { label: "Tiendas propias ilimitadas", included: true },
-            { label: "Productos y sucursales ilimitados", included: true },
-            { label: "Ledger + payouts automáticos", included: true },
-            { label: "Todos los portadores de envío", included: true },
-            { label: "Analytics avanzados", included: true },
-            { label: "Múltiples usuarios con RBAC", included: true },
-            { label: "White-label (dominio propio)", included: true },
+            { label: "Tiendas ilimitadas", included: true },
+            { label: "Productos ilimitados", included: true },
+            { label: "Sucursales ilimitadas", included: true },
+            { label: "Canales externos (Shopify, ML, etc.)", included: true },
+            { label: "Sync bidireccional masivo", included: true },
             { label: "Soporte dedicado 24/7", included: true },
-            { label: `Fee venta tienda propia: ${(FEE_VENTA_RATE * 100).toFixed(0)}%`, included: true },
-            { label: "✅ Canales externos (Shopify, ML, PedidosYa…)", included: true },
-            { label: "✅ Sync bidireccional inventario/precios", included: true },
-            { label: "✅ Dashboard consolidado multicanal", included: true },
-            { label: "Sin comisión en ventas de canales externos", included: true },
+            { label: `Fee venta reducida: 5%`, included: true },
+            { label: "Sincronización total", included: true },
         ],
     },
 ];
 
-/** Get a single plan definition by its id (defaults to basic if not found) */
+/** Get a single plan definition by its id (defaults to Basic if not found) */
 export function getPlanById(id: PlanId | undefined): Plan {
     return PLANS.find(p => p.id === id) ?? PLANS[0];
 }
 
-/**
- * Map of feature flags to allowed plan ids.
- * Exported here to avoid circular dependency between billing/plans and feature-flags.
- * feature-flags.ts reads this map — not the other way around.
- */
 export const PLAN_FEATURES: Record<string, PlanId[]> = {
-    ENTERPRISE_CHANNEL_SYNC: ["enterprise"],
-    MULTI_LOCATION: ["intermedio", "enterprise"],
-    ADVANCED_ANALYTICS: ["intermedio", "enterprise"],
-    MULTI_USER: ["enterprise"],
-    WHITE_LABEL: ["enterprise"],
+    ENTERPRISE_CHANNEL_SYNC: ["Enterprise"],
+    MULTI_LOCATION: ["Pro", "Enterprise"],
+    ADVANCED_ANALYTICS: ["Pro", "Enterprise"],
+    MULTI_USER: ["Enterprise"],
+    WHITE_LABEL: ["Enterprise"],
 };
 
 /**
  * Returns true if the user can create another store given their current store count and plan.
  */
 export function canCreateStore(currentStoreCount: number, plan: PlanId | undefined | null): boolean {
-    const p = getPlanById(plan ?? "basic");
+    const p = getPlanById(plan ?? "Basic");
     if (p.maxStores === -1) return true;
     return currentStoreCount < p.maxStores;
 }
@@ -122,7 +108,7 @@ export function canCreateStore(currentStoreCount: number, plan: PlanId | undefin
  * Formatted limit message shown in the upgrade prompt or billing page.
  */
 export function planLimitMessage(plan: PlanId | undefined | null): string {
-    const p = getPlanById(plan ?? "basic");
+    const p = getPlanById(plan ?? "Basic");
     if (p.maxStores === -1) return `Tu plan ${p.name} permite tiendas ilimitadas.`;
     return `Tu plan ${p.name} permite hasta ${p.maxStores} tienda${p.maxStores > 1 ? "s" : ""}.`;
 }

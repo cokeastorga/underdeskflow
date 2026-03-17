@@ -12,8 +12,8 @@ export default async function SuperAdminLayout({ children }: { children: ReactNo
     const userSnap = await adminDb.collection("users").doc(session!.uid).get();
     const role = userSnap.data()?.role;
     
-    if (role !== "superadmin") {
-        redirect("/tenant"); // Non-superadmins are sent to their own dashboard
+    if (role !== "platform_admin") {
+        redirect("/tenant"); // Non-privileged users go to their own dashboard
     }
 
     return (

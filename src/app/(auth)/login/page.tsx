@@ -18,11 +18,26 @@ export default function AdminLoginPage() {
     // We can use local loading state for the form, but redirection is handled by effect
     const [isLoggingIn, setIsLoggingIn] = useState(false);
     const router = useRouter();
-    const { user, loading: authLoading, storeId } = useAuth();
+    const { user, loading: authLoading, storeId, role } = useAuth();
 
     // Automatic redirect when authenticated
     useEffect(() => {
         if (!authLoading && user) {
+            // ── 1. Email Verification Guard ──────────────────────────────────────
+            // Only enforce for tenant_admins (optional, but requested by user)
+            // If user logged in but not verified, stay here and show notice.
+            if (!user.emailVerified && role === "tenant_admin") {
+                toast.error("Por favor, verifica tu correo electrónico antes de continuar.");
+                return;
+            }
+
+            // ── 2. Role-based Redirection ───────────────────────────────────────
+            if (role === "platform_admin") {
+                router.push("/superadmin");
+                toast.success("Panel de Control HQ detectado.");
+                return;
+            }
+
             if (storeId) {
                 router.push("/tenant");
             } else {
@@ -30,7 +45,7 @@ export default function AdminLoginPage() {
             }
             toast.success("¡Bienvenido de nuevo!");
         }
-    }, [user, authLoading, storeId, router]);
+    }, [user, authLoading, storeId, role, router]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -116,6 +131,11 @@ export default function AdminLoginPage() {
                         <p className="mt-2 text-sm text-muted-foreground">
                             Ingresa tus credenciales para continuar
                         </p>
+                        {typeof window !== "undefined" && window.location.search.includes("verify-email") && (
+                            <div className="mt-4 p-3 rounded-xl bg-primary/10 border border-primary/20 text-primary text-xs font-medium animate-pulse">
+                                Hemos enviado un link de verificación a tu correo.
+                            </div>
+                        )}
                     </div>
 
                     <form className="mt-8 space-y-6" onSubmit={handleLogin}>

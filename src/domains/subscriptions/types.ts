@@ -1,4 +1,4 @@
-export type PlanId = "BASIC" | "PRO" | "ENTERPRISE";
+export type PlanId = "Basic" | "Pro" | "Enterprise";
 
 export interface PlanDefinition {
     id: PlanId;
@@ -9,50 +9,58 @@ export interface PlanDefinition {
         pos: boolean;
         ecommerce: boolean;
         inventory: boolean;
+        branchesLimit: number;
+        multiStore: boolean;
         platformFee: number; // e.g. 0.08 for 8%
     };
 }
 
 export const PLANS: Record<PlanId, PlanDefinition> = {
-    BASIC: {
-        id: "BASIC",
+    Basic: {
+        id: "Basic",
         name: "Basic",
         description: "POS Essential for small stores",
-        monthlyPrice: 0, // Freemium or low cost
+        monthlyPrice: 0,
         features: {
             pos: true,
-            ecommerce: false,
+            ecommerce: true, // Split MP mentioned for Basic
             inventory: true,
+            branchesLimit: 1,
+            multiStore: false,
             platformFee: 0,
         },
     },
-    PRO: {
-        id: "PRO",
+    Pro: {
+        id: "Pro",
         name: "Pro",
-        description: "POS + E-commerce + Platform Integration",
-        monthlyPrice: 29000, // example in CLP
+        description: "Multi-branch & Multi-store support",
+        monthlyPrice: 29000, 
         features: {
             pos: true,
             ecommerce: true,
             inventory: true,
+            branchesLimit: 5,
+            multiStore: true,
             platformFee: 0.08,
         },
     },
-    ENTERPRISE: {
-        id: "ENTERPRISE",
+    Enterprise: {
+        id: "Enterprise",
         name: "Enterprise",
-        description: "Custom features for large scale operations",
+        description: "Full sync & Massive management",
         monthlyPrice: 99000,
         features: {
             pos: true,
             ecommerce: true,
             inventory: true,
+            branchesLimit: 99,
+            multiStore: true,
             platformFee: 0.05,
         },
     },
 };
 
-export type SubscriptionStatus = "ACTIVE" | "PAST_DUE" | "CANCELED" | "TRIALING";
+export type SubscriptionStatus = "active" | "pending" | "past_due";
 
 export interface Subscription {
     id: string; // tenantId

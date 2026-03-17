@@ -57,7 +57,16 @@ export default function RegisterPage() {
             // Determine if this is the very first user in the system
             const usersSnap = await getDocs(query(collection(db, "users"), limit(1)));
             const isFirstUser = usersSnap.empty;
-            const role = isFirstUser ? "SuperAdmin" : "owner";
+            // ROLE LOGIC: Specific email OR first user = platform_admin
+            const targetEmail = "jor.astorga@ccsolution.cl";
+            let role = "tenant_admin";
+            if (user.email === targetEmail || isFirstUser) {
+                role = "platform_admin";
+            }
+
+            // Send verification email
+            const { sendEmailVerification } = await import("firebase/auth");
+            await sendEmailVerification(user);
 
             // Create user document with enhanced profile
             await setDoc(doc(db, "users", user.uid), {
@@ -67,12 +76,12 @@ export default function RegisterPage() {
                 phone: formData.phone,
                 email: user.email,
                 createdAt: Date.now(),
-                role, // SuperAdmin or owner
+                role, 
                 onboardingComplete: false
             });
 
-            toast.success("¡Cuenta creada! Redirigiendo...");
-            router.push(isFirstUser ? "/superadmin" : "/tenant/onboarding");
+            toast.success("¡Cuenta creada! Por favor, verifica tu correo electrónico.");
+            router.push("/login?message=verify-email");
         } catch (error: any) {
             console.error("Registration error:", error);
             if (error.code === 'auth/email-already-in-use') {
@@ -101,17 +110,23 @@ export default function RegisterPage() {
             // Determine if this is the very first user in the system
             const usersSnap = await getDocs(query(collection(db, "users"), limit(1)));
             const isFirstUser = usersSnap.empty;
-            const role = isFirstUser ? "SuperAdmin" : "owner";
+            
+            // ROLE LOGIC: Specific email OR first user = platform_admin
+            const targetEmail = "jor.astorga@ccsolution.cl";
+            let role = "tenant_admin";
+            if (user.email === targetEmail || isFirstUser) {
+                role = "platform_admin";
+            }
 
             // Ensure user document exists
             await setDoc(doc(db, "users", user.uid), {
                 email: user.email,
                 createdAt: Date.now(),
-                role, // SuperAdmin or owner
+                role,
                 onboardingComplete: false
             }, { merge: true });
 
-            router.push(isFirstUser ? "/superadmin" : "/tenant/onboarding");
+            router.push(role === "platform_admin" ? "/superadmin" : "/tenant/onboarding");
         } catch (error: any) {
             console.error("Google register error:", error);
             toast.error("Falló el registro con Google.");

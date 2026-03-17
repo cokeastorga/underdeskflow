@@ -39,6 +39,8 @@ export function CreateStoreForm() {
                     ownerId: user.uid,
                     createdAt: Date.now(),
                     currency: "CLP",
+                    planId: "Basic",
+                    subscriptionStatus: "active",
                     onboardingStatus: 0,
                     fulfillment: { pickup: true, delivery: false },
                     design: {

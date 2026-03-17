@@ -26,6 +26,10 @@ export async function proxy(req: NextRequest) {
         }
     }
 
+    if (url.pathname.startsWith('/register') || url.pathname.startsWith('/login')) {
+        return NextResponse.next();
+    }
+
     // ── 2. Custom-domain multi-tenant routing ────────────────────────────────
     // Get hostname (e.g. 'deliciasportenas.cl' or 'app.underdesk.com' or 'localhost:3000')
     let hostname = req.headers.get('host') || '';
@@ -38,7 +42,8 @@ export async function proxy(req: NextRequest) {
         hostname === 'localhost' ||
         hostname.endsWith('.vercel.app') || // Preview deployments
         hostname === 'underdesk.com' ||
-        hostname === 'app.underdesk.com';
+        hostname === 'app.underdesk.com' ||
+        hostname === 'udf.ccsolution.cl';
 
     if (isAppDomain) {
         return NextResponse.next();

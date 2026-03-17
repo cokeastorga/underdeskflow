@@ -21,7 +21,7 @@ import { useRouter } from "next/navigation";
 // ─── Fee Policy Card ─────────────────────────────────────────────────────────
 
 function FeePolicyCard({ currentPlanId }: { currentPlanId: PlanId }) {
-    const isEnterprise = currentPlanId === "enterprise";
+    const isEnterprise = currentPlanId === "Enterprise";
     return (
         <Card className="border-indigo-500/30 overflow-hidden">
             <div className="h-1 bg-gradient-to-r from-indigo-500 to-violet-500" />
@@ -142,7 +142,7 @@ export default function BillingPage() {
         });
     }, [storeId, user]);
 
-    const currentPlan: PlanId = store?.plan ?? "basic";
+    const currentPlan: PlanId = (store as any)?.planId ?? "Basic";
     const plan = getPlanById(currentPlan);
 
     const handleUpgrade = async (newPlan: Plan) => {
@@ -150,59 +150,31 @@ export default function BillingPage() {
     };
 
     const handleProcessPayment = async () => {
-        if (!selectedUpgradePlan || !storeId) return;
+        if (!selectedUpgradePlan || !storeId || !user) return;
 
         setLoading(true);
+        const toastId = toast.loading("Procesando pago y actualizando plan...");
+        
         try {
-            // 1. Create a "Subscription Order" record (system-level)
-            const orderData = {
-                orderNumber: `SUB-${Math.floor(100000 + Math.random() * 900000)}`,
-                storeId,
-                customerName: user?.displayName || user?.email || "Tenant",
-                email: user?.email || "",
-                type: "subscription_upgrade",
-                planId: selectedUpgradePlan.id,
-                totalAmount: selectedUpgradePlan.priceMonthly,
-                currency: "CLP",
-                status: 'pending',
-                createdAt: Date.now(),
-            };
+            // Import and call the server action
+            const { upgradePlanAction } = await import("./actions");
+            const result = await upgradePlanAction(storeId, user.uid, selectedUpgradePlan.id);
 
-            const orderRef = await addDoc(collection(db, "orders"), orderData);
-
-            // 2. Initiate Payment Intent
-            const response = await fetch("/api/payments/intents", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    order_id: orderRef.id,
-                    payment_method: "card",
-                    provider: selectedProvider
-                })
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || "Error al iniciar el pago");
+            if (result.success) {
+                toast.success("¡Plan actualizado exitosamente!", { id: toastId });
+                // Force a hard reload to refresh all context/feature guards as requested
+                window.location.reload();
             }
-
-            const { client_url } = await response.json();
-
-            if (client_url) {
-                window.location.href = client_url;
-            } else {
-                throw new Error("No se recibió una URL de pago válida");
-            }
-
         } catch (error: any) {
-            console.error("Error in subscription payment:", error);
-            toast.error(error.message || "Error al procesar el pago");
+            console.error("Error in subscription upgrade:", error);
+            toast.error(error.message || "Error al actualizar el plan", { id: toastId });
+        } finally {
             setLoading(false);
         }
     };
 
     const handleEnterpriseUpgrade = () => {
-        const enterprisePlan = PLANS.find(p => p.id === "enterprise");
+        const enterprisePlan = PLANS.find(p => p.id === "Enterprise");
         if (enterprisePlan) setSelectedUpgradePlan(enterprisePlan);
     };
 
@@ -218,7 +190,7 @@ export default function BillingPage() {
                 {[
                     {
                         label: "Plan actual", value: plan.name, icon: Zap,
-                        color: currentPlan === "enterprise"
+                        color: currentPlan === "Enterprise"
                             ? "text-violet-500 bg-violet-500/10"
                             : "text-indigo-500 bg-indigo-500/10"
                     },
@@ -246,12 +218,12 @@ export default function BillingPage() {
             <FeePolicyCard currentPlanId={currentPlan} />
 
             {/* Enterprise Feature Comparison Table */}
-            {currentPlan !== "enterprise" && (
+            {currentPlan !== "Enterprise" && (
                 <EnterpriseFeatureTable onUpgrade={handleEnterpriseUpgrade} />
             )}
 
             {/* Enterprise active state */}
-            {currentPlan === "enterprise" && (
+            {currentPlan === "Enterprise" && (
                 <Card className="border-violet-500/30 bg-gradient-to-br from-violet-500/5 to-transparent">
                     <CardContent className="p-5 flex items-center gap-4">
                         <div className="h-12 w-12 rounded-xl bg-violet-500/20 flex items-center justify-center shrink-0">

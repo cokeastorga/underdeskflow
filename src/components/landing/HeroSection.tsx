@@ -38,7 +38,7 @@ const STATS = [
     { icon: Users, value: 3721, prefix: "", suffix: "", label: "Comercios activos", color: "text-amber-400" },
 ];
 
-export default function HeroSection() {
+export default function HeroSection({ isFirstRun }: { isFirstRun?: boolean }) {
     return (
         <section className="relative min-h-screen flex flex-col items-center justify-center text-center overflow-hidden pt-20">
 
@@ -87,22 +87,22 @@ export default function HeroSection() {
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
                     </span>
-                    Plataforma todo-en-uno para comercio digital
+                    {isFirstRun ? "Bienvenido a UnderDeskFlow" : "Plataforma todo-en-uno para comercio digital"}
                 </motion.div>
 
                 {/* Headline */}
                 <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35, duration: 0.7 }}
                     className="text-6xl md:text-8xl lg:text-9xl font-bold tracking-tight font-serif leading-[1.0] mb-8">
-                    Tu negocio.
+                    {isFirstRun ? "Empecemos a" : "Tu negocio."}
                     <br />
-                    <span className="text-gradient">Online.</span>
+                    <span className="text-gradient">{isFirstRun ? "Construir." : "Online."}</span>
                 </motion.h1>
 
                 <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
                     className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed mb-12">
-                    Diseña tu tienda, gestiona productos, coordina envíos y recibe pagos —
-                    <br className="hidden md:block" />
-                    todo desde un panel de control pensado para crecer.
+                    {isFirstRun 
+                        ? "La base de datos está lista. Crea tu cuenta de SuperAdmin para configurar la plataforma y empezar a recibir comercios." 
+                        : "Diseña tu tienda, gestiona productos, coordina envíos y recibe pagos — todo desde un panel de control pensado para crecer."}
                 </motion.p>
 
                 {/* CTAs */}
