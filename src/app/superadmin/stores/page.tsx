@@ -4,10 +4,19 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { getSubscription } from "@/domains/subscriptions/services.server";
 
 async function getAllStores() {
     const snap = await adminDb.collection("stores").orderBy("createdAt", "desc").limit(100).get();
-    return snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
+    const stores = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
+    
+    // Enrich with actual subscription plans
+    const enriched = await Promise.all(stores.map(async (store) => {
+        const sub = await getSubscription(store.id);
+        return { ...store, plan: sub.planId };
+    }));
+    
+    return enriched;
 }
 
 export default async function SuperAdminStoresPage() {

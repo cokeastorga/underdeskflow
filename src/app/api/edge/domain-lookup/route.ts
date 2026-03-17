@@ -25,11 +25,27 @@ export async function GET(req: NextRequest) {
 
         const data = domainDoc.data()!;
         if (!data.verified) {
-            // Depending on business rules, we could still resolve or block unverified domains
             return NextResponse.json({ error: "Domain not verified" }, { status: 403 });
         }
 
-        return NextResponse.json({ storeId: data.storeId });
+        // Fetch plan features to check if e-commerce is enabled
+        const subDoc = await adminDb.collection("subscriptions").doc(data.storeId).get();
+        let ecommerceEnabled = false;
+        
+        if (subDoc.exists) {
+            const subData = subDoc.data()!;
+            if (subData.planId === "PRO" || subData.planId === "ENTERPRISE") {
+                ecommerceEnabled = true;
+            }
+        } else {
+            // Default BASIC has no ecommerce
+            ecommerceEnabled = false;
+        }
+
+        return NextResponse.json({ 
+            storeId: data.storeId,
+            ecommerceEnabled 
+        });
     } catch (err: any) {
         console.error("Domain Edge Lookup error:", err);
         return NextResponse.json({ error: "Server Error" }, { status: 500 });

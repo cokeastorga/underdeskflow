@@ -31,6 +31,7 @@ export interface Variant {
     basePrice: number;
     costPrice?: number;
     barcode?: string;
+    stock: number; // Current physical stock
     isActive: boolean;
     createdAt: number;
     updatedAt: number;

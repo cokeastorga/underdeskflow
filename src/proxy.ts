@@ -68,11 +68,15 @@ export async function proxy(req: NextRequest) {
 
         const mapping = await mappingRes.json();
         const storeId: string | undefined = mapping.storeId;
+        const ecommerceEnabled: boolean = mapping.ecommerceEnabled ?? false;
 
         if (storeId) {
+            if (!ecommerceEnabled) {
+                // Feature gating: Block storefront if plan doesn't allow it
+                return NextResponse.rewrite(new URL('/inactive-service', req.url));
+            }
+
             // REWRITE MAGIC:
-            // Browser URL stays "deliciasportenas.cl/products/123"
-            // Internally routed to /storefront/[storeId]/products/123
             return NextResponse.rewrite(
                 new URL(`/storefront/${storeId}${url.pathname}${url.search}`, req.url)
             );

@@ -11,9 +11,22 @@ import {
     ChevronRight,
     Globe,
     Activity,
+    Landmark,
 } from "lucide-react";
 
-const NAV_SECTIONS = [
+interface NavItem {
+    name: string;
+    href: string;
+    icon: any;
+    exact?: boolean;
+}
+
+interface NavSection {
+    label: string;
+    items: NavItem[];
+}
+
+const NAV_SECTIONS: NavSection[] = [
     {
         label: "Cuartel General",
         items: [
@@ -26,6 +39,7 @@ const NAV_SECTIONS = [
         items: [
             { name: "Gestión de Tiendas", href: "/superadmin/stores", icon: Store },
             { name: "Auditoría de Pagos", href: "/superadmin/payments", icon: CreditCard },
+            { name: "Facturación & Planes", href: "/superadmin/billing", icon: Landmark },
         ],
     },
     {

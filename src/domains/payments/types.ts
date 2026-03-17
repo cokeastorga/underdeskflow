@@ -1,5 +1,5 @@
 export type PaymentProvider = "MERCADOPAGO" | "SUMUP" | "CASH" | "TRANSFER";
-export type PaymentIntentStatus = "PENDING" | "PROCESSING" | "SUCCEEDED" | "FAILED" | "CANCELLED";
+export type PaymentIntentStatus = "PENDING" | "PROCESSING" | "SUCCEEDED" | "FAILED" | "CANCELLED" | "EXPIRED";
 
 export interface PaymentIntent {
     id: string; // e.g. pi_12345
