@@ -5,15 +5,15 @@ export async function processTenantOnboarding(email: string, storeName: string, 
     // We are performing multiple fast operations without a pure single transaction to avoid 500-document limits,
     // but in a sequential safe order where failure mid-way can be retried or cleaned up via a worker.
     
-    // 1. Create Account
-    const accountRef = adminDb.collection("accounts").doc();
-    const accountId = `acc_${accountRef.id}`;
+    // 1. Create User/Account
+    const userRef = adminDb.collection("users").doc();
+    const accountId = `acc_${userRef.id}`;
     const now = Date.now();
     
-    await accountRef.set({
+    await userRef.set({
         id: accountId,
         email,
-        plan: "starter",
+        plan: "Basic",
         createdAt: now,
     });
     

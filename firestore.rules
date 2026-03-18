@@ -13,8 +13,13 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.token.storeId == targetStoreId;
     }
 
-    match /accounts/{accountId} {
-      allow read, write: if isAuthenticated() && request.auth.uid == accountId;
+    match /users/{userId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    match /users {
+      // Allow checking if the database is empty during registration
+      allow list: if isAuthenticated() && request.query.limit <= 1;
     }
 
     match /stores/{storeId} {

@@ -55,14 +55,17 @@ export default function RegisterPage() {
             });
 
             // Determine if this is the very first user in the system
-            const usersSnap = await getDocs(query(collection(db, "users"), limit(1)));
-            const isFirstUser = usersSnap.empty;
+            let isFirstUser = false;
+            try {
+                const usersSnap = await getDocs(query(collection(db, "users"), limit(1)));
+                isFirstUser = usersSnap.empty;
+            } catch (e) {
+                console.warn("[Register] Could not verify if first user, defaulting to tenant_admin:", e);
+            }
+
             // ROLE LOGIC: Specific email OR first user = platform_admin
             const targetEmail = "jor.astorga@ccsolution.cl";
-            let role = "tenant_admin";
-            if (user.email === targetEmail || isFirstUser) {
-                role = "platform_admin";
-            }
+            const role = (user.email === targetEmail || isFirstUser) ? "platform_admin" : "tenant_admin";
 
             // Send verification email
             const { sendEmailVerification } = await import("firebase/auth");
@@ -108,15 +111,17 @@ export default function RegisterPage() {
             });
 
             // Determine if this is the very first user in the system
-            const usersSnap = await getDocs(query(collection(db, "users"), limit(1)));
-            const isFirstUser = usersSnap.empty;
+            let isFirstUser = false;
+            try {
+                const usersSnap = await getDocs(query(collection(db, "users"), limit(1)));
+                isFirstUser = usersSnap.empty;
+            } catch (e) {
+                console.warn("[Register] Could not verify if first user, defaulting to tenant_admin:", e);
+            }
             
             // ROLE LOGIC: Specific email OR first user = platform_admin
             const targetEmail = "jor.astorga@ccsolution.cl";
-            let role = "tenant_admin";
-            if (user.email === targetEmail || isFirstUser) {
-                role = "platform_admin";
-            }
+            const role = (user.email === targetEmail || isFirstUser) ? "platform_admin" : "tenant_admin";
 
             // Ensure user document exists
             await setDoc(doc(db, "users", user.uid), {

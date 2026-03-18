@@ -111,13 +111,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     }
                     setUser(user);
                 } catch (error) {
-                    console.error("Error syncing session:", error);
-                    // If session sync fails, force logout
-                    await signOut(auth);
-                    setUser(null);
-                    setStoreId(null);
-                    setRole(null);
-                    setStore(null);
+                    console.error("Error during authentication state update:", error);
+                    // We don't force logout here to stay resilient to transient network issues
+                    // The user will still have an active Firebase Auth session on the client
                 }
             } else {
                 // User is signed out
