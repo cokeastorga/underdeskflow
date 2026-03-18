@@ -38,10 +38,13 @@ export default function DomainClient({ initialDomains }: DomainClientProps) {
                         Verificación en tiempo real de DNS (A/CNAME) y estado SSL para tenants.
                     </p>
                 </div>
-                <Button className="bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-500/20">
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Nuevo Root Domain
-                </Button>
+                <div className="flex flex-col items-end gap-2">
+                    <Button className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 shadow-lg cursor-not-allowed opacity-70">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Configurar Raíz de Plataforma
+                    </Button>
+                    <span className="text-[10px] text-zinc-500 font-medium italic uppercase tracking-wider">Sólo Infraestructura Crítica</span>
+                </div>
             </div>
 
             <div className="flex items-center gap-4 bg-zinc-900 border border-zinc-800 p-4 rounded-xl">
@@ -87,8 +90,15 @@ export default function DomainClient({ initialDomains }: DomainClientProps) {
                                                 {d.storeName}
                                             </td>
                                             <td className="py-4 px-4">
-                                                <Badge variant="outline" className="text-[10px] font-bold uppercase py-0.5 px-1.5 border-none bg-zinc-800 text-zinc-400 tracking-tighter capitalize italic">
-                                                    {d.type}
+                                                <Badge 
+                                                    variant="outline" 
+                                                    className={`text-[10px] font-bold uppercase py-0.5 px-2 border-none tracking-tighter capitalize ${
+                                                        d.type === "custom" 
+                                                            ? "bg-amber-500/10 text-amber-500" 
+                                                            : "bg-blue-500/10 text-blue-400"
+                                                    }`}
+                                                >
+                                                    {d.type === "custom" ? "Dominio Propio" : "Subdominio Plataforma"}
                                                 </Badge>
                                             </td>
                                             <td className="py-4 px-4">
