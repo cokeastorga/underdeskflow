@@ -158,7 +158,7 @@ export default function BillingPage() {
         try {
             // Import and call the server action
             const { upgradePlanAction } = await import("./actions");
-            const result = await upgradePlanAction(storeId, user.uid, selectedUpgradePlan.id);
+            const result = await upgradePlanAction(selectedUpgradePlan.id);
 
             if (result.success) {
                 if (result.checkoutUrl) {

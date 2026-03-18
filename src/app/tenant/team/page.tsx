@@ -61,7 +61,6 @@ export default function TeamPage() {
         setIsSubmitting(true);
         try {
             const result = await inviteMemberAction(
-                storeId,
                 inviteData.email,
                 inviteData.firstName,
                 inviteData.lastName,
