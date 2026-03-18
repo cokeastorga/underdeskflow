@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import { MercadoPagoConfig, Payment, Preference } from "mercadopago";
+import { adminDb } from "@/lib/firebase/admin-config";
 import { PaymentProviderAdapter, RefundParams, scrubPci } from "./base";
 import {
     PaymentIntent,
@@ -27,8 +28,29 @@ export class MercadoPagoAdapter implements PaymentProviderAdapter {
         this.webhookSecret = process.env.MERCADOPAGO_WEBHOOK_SECRET ?? "";
     }
 
+    private async getHQAccessToken(): Promise<string> {
+        try {
+            const hqDoc = await adminDb.doc("system/config/integrations/mercadopago").get();
+            if (hqDoc.exists && hqDoc.data()?.accessToken) {
+                return hqDoc.data()?.accessToken;
+            }
+        } catch (e) {
+            console.error("[MP Adapter] Failed to fetch HQ Access Token from Firestore, using ENV fallback");
+        }
+        return process.env.MERCADOPAGO_ACCESS_TOKEN ?? "";
+    }
+
+    private async getHQClient(): Promise<MercadoPagoConfig> {
+        const accessToken = await this.getHQAccessToken();
+        return new MercadoPagoConfig({
+            accessToken,
+            options: { timeout: 10_000, idempotencyKey: undefined },
+        });
+    }
+
     async createPayment(intent: PaymentIntent): Promise<CreatePaymentResult> {
-        const preference = new Preference(mpClient);
+        const client = await this.getHQClient();
+        const preference = new Preference(client);
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
 
         const result = await preference.create({
@@ -110,7 +132,8 @@ export class MercadoPagoAdapter implements PaymentProviderAdapter {
     }
 
     async queryPaymentStatus(providerIntentId: string): Promise<ProviderStatus> {
-        const payments = new Payment(mpClient);
+        const client = await this.getHQClient();
+        const payments = new Payment(client);
         const payment = await payments.get({ id: providerIntentId });
         const raw = payment.status ?? "rejected";
         return {
@@ -172,7 +195,8 @@ export class MercadoPagoAdapter implements PaymentProviderAdapter {
         if (!paymentId) throw new Error("MercadoPago webhook missing payment id");
 
         // Fetch the payment to get the authoritative status
-        const payments = new Payment(mpClient);
+        const client = await this.getHQClient();
+        const payments = new Payment(client);
         const payment = await payments.get({ id: paymentId });
 
         // The internal intent id is stored in external_reference
@@ -213,11 +237,7 @@ export class MercadoPagoAdapter implements PaymentProviderAdapter {
         const { providerIntentId, amount, isFullRefund, idempotencyKey } = params;
 
         // MP refund: POST /v1/payments/{id}/refunds
-        // The Payment SDK class does not expose a refund() method directly,
-        // so we use the REST API with the platform's access token.
-        // For full refunds, omit amount — MP refunds the full transaction.
-        // Confirmation is ASYNC — the payment.updated webhook is authoritative.
-        const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN ?? "";
+        const accessToken = await this.getHQAccessToken();
         const body = isFullRefund ? {} : { amount };
 
         const res = await fetch(
@@ -252,7 +272,7 @@ export class MercadoPagoAdapter implements PaymentProviderAdapter {
     }
 
     async queryStatus(providerIntentId: string, tenantConfig?: any): Promise<StatusResult> {
-        const accessToken = tenantConfig?.access_token || process.env.MERCADOPAGO_ACCESS_TOKEN || "";
+        const accessToken = tenantConfig?.access_token || await this.getHQAccessToken();
         const res = await fetch(`https://api.mercadopago.com/v1/payments/${providerIntentId}`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,

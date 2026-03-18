@@ -40,6 +40,7 @@ const NAV_SECTIONS: NavSection[] = [
             { name: "Gestión de Tiendas", href: "/superadmin/stores", icon: Store },
             { name: "Auditoría de Pagos", href: "/superadmin/payments", icon: CreditCard },
             { name: "Facturación & Planes", href: "/superadmin/billing", icon: Landmark },
+            { name: "Integraciones HQ", href: "/superadmin/integrations", icon: Zap },
         ],
     },
     {

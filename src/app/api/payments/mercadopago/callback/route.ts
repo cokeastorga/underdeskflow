@@ -55,21 +55,36 @@ export async function GET(req: NextRequest) {
         const { access_token, refresh_token, public_key, user_id, expires_in } = tokenData;
 
         // Save safely to Firestore
-        await adminDb.doc(`stores/${storeId}/integrations/mercadopago`).set({
-            accessToken: access_token,
-            refreshToken: refresh_token,
-            publicKey: public_key,
-            userId: user_id,
-            expiresAt: Date.now() + (expires_in * 1000),
-            enabled: true,
-            updatedAt: Date.now(),
-        }, { merge: true });
+        if (storeId === "HQ_PLATFORM") {
+            await adminDb.doc(`system/config/integrations/mercadopago`).set({
+                accessToken: access_token,
+                refreshToken: refresh_token,
+                publicKey: public_key,
+                userId: user_id,
+                expiresAt: Date.now() + (expires_in * 1000),
+                enabled: true,
+                updatedAt: Date.now(),
+            }, { merge: true });
 
-        // Redirect back to the tenant dashboard
-        const returnUrl = new URL(`/tenant/payments`, appUrl);
-        returnUrl.searchParams.set("mp_connected", "true");
+            const returnUrl = new URL(`/superadmin/integrations`, appUrl);
+            returnUrl.searchParams.set("mp_connected", "true");
+            return NextResponse.redirect(returnUrl.toString());
+        } else {
+            await adminDb.doc(`stores/${storeId}/integrations/mercadopago`).set({
+                accessToken: access_token,
+                refreshToken: refresh_token,
+                publicKey: public_key,
+                userId: user_id,
+                expiresAt: Date.now() + (expires_in * 1000),
+                enabled: true,
+                updatedAt: Date.now(),
+            }, { merge: true });
 
-        return NextResponse.redirect(returnUrl.toString());
+            // Redirect back to the tenant dashboard
+            const returnUrl = new URL(`/tenant/payments`, appUrl);
+            returnUrl.searchParams.set("mp_connected", "true");
+            return NextResponse.redirect(returnUrl.toString());
+        }
 
     } catch (err) {
         console.error("MercadoPago Callback Exception:", err);
