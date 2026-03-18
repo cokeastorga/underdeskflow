@@ -13,13 +13,10 @@ export async function GET(req: NextRequest) {
     const clientId = process.env.MP_CLIENT_ID;
     const clientSecret = process.env.MP_CLIENT_SECRET;
     
-    // We use the same dynamic URL resolution as the middleware
-    const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
-    const vercelHost = process.env.VERCEL_URL;
-    let appUrl = process.env.NEXT_PUBLIC_APP_URL ? process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '') : "";
-    if (!appUrl) {
-        appUrl = vercelHost ? `${protocol}://${vercelHost}` : 'http://localhost:3000';
-    }
+    // Unify appUrl logic to avoid drift between connect and callback
+    const host = req.headers.get("host") || "";
+    const protocol = req.headers.get("x-forwarded-proto") || (host.includes("localhost") ? "http" : "https");
+    const appUrl = `${protocol}://${host}`;
 
     if (!clientId || !clientSecret) {
          console.error("MP_CLIENT_ID or MP_CLIENT_SECRET is missing.");
@@ -48,8 +45,17 @@ export async function GET(req: NextRequest) {
         const tokenData = await tokenRes.json();
 
         if (!tokenRes.ok) {
-            console.error("MP OAuth Error:", tokenData);
-            return NextResponse.json({ error: "Failed to exchange authorization code." }, { status: tokenRes.status });
+            console.error("[MP OAuth] Token Exchange Failed:", {
+                status: tokenRes.status,
+                data: tokenData,
+                redirectUriUsed: redirectUri,
+                clientIdUsed: clientId
+            });
+            return NextResponse.json({ 
+                error: "Failed to exchange authorization code.",
+                details: tokenData.message || "Unknown provider error",
+                status: tokenRes.status
+            }, { status: tokenRes.status });
         }
 
         const { access_token, refresh_token, public_key, user_id, expires_in } = tokenData;
