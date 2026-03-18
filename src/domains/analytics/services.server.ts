@@ -116,6 +116,9 @@ export async function getSuperAdminAnalytics(): Promise<SuperAdminFinancials> {
         }
         
         // Keep the top 20 for the dashboard list
+        const rawCreatedAt = data.created_at || Date.now();
+        const normalizedCreatedAt = typeof rawCreatedAt === "number" ? rawCreatedAt : (rawCreatedAt.toMillis ? rawCreatedAt.toMillis() : Date.now());
+
         if (index < 20) {
              latestPayments.push({
                  id: data.id || doc.id,
@@ -123,7 +126,7 @@ export async function getSuperAdminAnalytics(): Promise<SuperAdminFinancials> {
                  amount: data.amount || 0,
                  platformFee: fee,
                  status: data.status,
-                 createdAt: data.created_at || Date.now(),
+                 createdAt: normalizedCreatedAt,
                  provider: data.provider || "mercadopago"
              });
         }
@@ -135,20 +138,26 @@ export async function getSuperAdminAnalytics(): Promise<SuperAdminFinancials> {
     
     // Iterate serially to avoid hammering the DB with subcollection reads
     for (const docSnap of storesSnap.docs) {
-         const storeId = docSnap.id;
-         const storeData = docSnap.data();
-         
-         // Skip system/superadmin accounts implicitly if they have specific names or lack tenant traits
-         if (storeData.name?.toLowerCase().includes("superadmin")) continue;
-         
-         const mpDoc = await adminDb.collection("stores").doc(storeId).collection("integrations").doc("mercadopago").get();
-         const mpData = mpDoc.data();
-         
-         if (!mpDoc.exists || !mpData?.enabled || !mpData?.accessToken) {
-             storesMissingMp.push({
-                 id: storeId,
-                 name: storeData.name || storeId
-             });
+         try {
+             const storeId = docSnap.id;
+             const storeData = docSnap.data();
+             
+             // Skip system/superadmin accounts implicitly if they have specific names or lack tenant traits
+             if (storeData.name?.toLowerCase().includes("superadmin")) continue;
+             
+             const mpDoc = await adminDb.collection("stores").doc(storeId).collection("integrations").doc("mercadopago").get();
+             const mpData = mpDoc.data();
+             
+             if (!mpDoc.exists || !mpData?.enabled || !mpData?.accessToken) {
+                 storesMissingMp.push({
+                     id: storeId,
+                     name: storeData.name || storeId
+                 });
+             }
+         } catch (error) {
+             console.error(`[SuperAdmin] Error checking store ${docSnap.id}:`, error);
+             // Don't fail the whole dashboard for one store
+             continue;
          }
     }
 
@@ -222,7 +231,10 @@ export async function getSuperAdminTimeSeries(): Promise<DailyMetric[]> {
     snapshot.docs.forEach(doc => {
         const data = doc.data();
         const ts = data.created_at;
-        const dateKey = new Date(ts).toISOString().split('T')[0];
+        
+        // Safety: Handle both number and Firestore Timestamp
+        const ms = typeof ts === "number" ? ts : (ts?.toMillis ? ts.toMillis() : Date.now());
+        const dateKey = new Date(ms).toISOString().split('T')[0];
         
         if (dailyMap.has(dateKey)) {
             const vals = dailyMap.get(dateKey)!;
