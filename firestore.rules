@@ -13,13 +13,13 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.token.storeId == targetStoreId;
     }
 
-    match /users/{userId} {
-      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    match /users/{uid} {
+      allow read, write: if request.auth != null && (request.auth.uid == uid || request.auth.token.email == "jor.astorga@ccsolution.cl");
     }
 
     match /users {
       // Allow checking if the database is empty during registration
-      allow list: if isAuthenticated() && request.query.limit <= 1;
+      allow list: if request.auth != null && request.query.limit <= 1;
     }
 
     match /stores/{storeId} {

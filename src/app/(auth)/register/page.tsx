@@ -54,17 +54,21 @@ export default function RegisterPage() {
                 body: JSON.stringify({ idToken }),
             });
 
-            // Determine if this is the very first user in the system
-            let isFirstUser = false;
-            try {
-                const usersSnap = await getDocs(query(collection(db, "users"), limit(1)));
-                isFirstUser = usersSnap.empty;
-            } catch (e) {
-                console.warn("[Register] Could not verify if first user, defaulting to tenant_admin:", e);
-            }
-
             // ROLE LOGIC: Specific email OR first user = platform_admin
             const targetEmail = "jor.astorga@ccsolution.cl";
+            let isFirstUser = false;
+            
+            if (user.email === targetEmail) {
+                console.log("[Register] Admin email detected, bypassing first user check.");
+            } else {
+                try {
+                    const usersSnap = await getDocs(query(collection(db, "users"), limit(1)));
+                    isFirstUser = usersSnap.empty;
+                } catch (e) {
+                    console.warn("[Register] Could not verify if first user, defaulting to tenant_admin:", e);
+                }
+            }
+
             const role = (user.email === targetEmail || isFirstUser) ? "platform_admin" : "tenant_admin";
 
             // Send verification email
@@ -110,17 +114,21 @@ export default function RegisterPage() {
                 body: JSON.stringify({ idToken }),
             });
 
-            // Determine if this is the very first user in the system
-            let isFirstUser = false;
-            try {
-                const usersSnap = await getDocs(query(collection(db, "users"), limit(1)));
-                isFirstUser = usersSnap.empty;
-            } catch (e) {
-                console.warn("[Register] Could not verify if first user, defaulting to tenant_admin:", e);
-            }
-            
             // ROLE LOGIC: Specific email OR first user = platform_admin
             const targetEmail = "jor.astorga@ccsolution.cl";
+            let isFirstUser = false;
+            
+            if (user.email === targetEmail) {
+                console.log("[Register] Admin email detected, bypassing first user check.");
+            } else {
+                try {
+                    const usersSnap = await getDocs(query(collection(db, "users"), limit(1)));
+                    isFirstUser = usersSnap.empty;
+                } catch (e) {
+                    console.warn("[Register] Could not verify if first user, defaulting to tenant_admin:", e);
+                }
+            }
+
             const role = (user.email === targetEmail || isFirstUser) ? "platform_admin" : "tenant_admin";
 
             // Ensure user document exists

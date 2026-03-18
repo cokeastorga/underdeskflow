@@ -3,7 +3,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase/config";
 import { signOut } from "firebase/auth";
 
@@ -105,9 +105,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                             }
                         }
                     } else {
-                        setStoreId(null);
-                        setRole(null);
-                        setStore(null);
+                        // SELF-HEALING: If it's Jorge and profile is missing, recreate it
+                        if (user.email === "jor.astorga@ccsolution.cl") {
+                            console.log("[Auth] Recreating missing profile for platform_admin");
+                            const newProfile = {
+                                email: user.email,
+                                role: "platform_admin",
+                                createdAt: Date.now(),
+                                onboardingComplete: true
+                            };
+                            await setDoc(doc(db, "users", user.uid), newProfile);
+                            setRole("platform_admin");
+                        } else {
+                            setStoreId(null);
+                            setRole(null);
+                            setStore(null);
+                        }
                     }
                     setUser(user);
                 } catch (error) {
