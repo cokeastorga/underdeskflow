@@ -1,7 +1,7 @@
 
 "use client";
 
-import { createContext, useContext, useEffect, useState, Suspense } from "react";
+import { createContext, useContext, useEffect, useState, Suspense, useCallback } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase/config";
@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [isImpersonating, setIsImpersonating] = useState(false);
     const [loading, setLoading] = useState(true);
 
-    const refreshAuth = async () => {
+    const refreshAuth = useCallback(async () => {
         const currentUser = auth.currentUser;
         if (!currentUser) return;
 
@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const userDoc = await getDoc(doc(db, "users", currentUser.uid));
             if (userDoc.exists()) {
                 const userData = userDoc.data();
-                const actualRole = userData.role || null;
+                const actualRole = userData.role as any || null;
                 setRole(actualRole);
 
                 // Handle impersonation for platform admins
@@ -78,27 +78,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch (error) {
             console.error("Error refreshing auth context:", error);
         }
-    };
+    }, []);
 
     const stopImpersonating = async () => {
         await fetch("/api/superadmin/impersonate", { method: "DELETE" });
         setIsImpersonating(false);
         refreshAuth();
     };
-
-    // Instant Refresh Mechanism for Payment Returns
-    // This is separated into a sub-component to safely use useSearchParams within a Suspense boundary
-    function PaymentRefreshHandler() {
-        const searchParams = useSearchParams();
-        useEffect(() => {
-            const mpStatus = searchParams.get("mp_status");
-            if (mpStatus === "approved" || mpStatus === "success") {
-                console.log("[Auth] Payment success detected in URL. Refreshing context...");
-                refreshAuth();
-            }
-        }, [searchParams]);
-        return null;
-    }
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -213,9 +199,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return (
         <AuthContext.Provider value={{ user, storeId, role, store, loading, isImpersonating, refreshAuth, stopImpersonating }}>
             <Suspense fallback={null}>
-                <PaymentRefreshHandler />
+                <PaymentRefreshHandler refreshAuth={refreshAuth} />
             </Suspense>
             {children}
         </AuthContext.Provider>
     );
+}
+
+function PaymentRefreshHandler({ refreshAuth }: { refreshAuth: () => Promise<void> }) {
+    const searchParams = useSearchParams();
+    useEffect(() => {
+        const mpStatus = searchParams.get("mp_status");
+        if (mpStatus === "approved" || mpStatus === "success") {
+            console.log("[Auth] Payment success detected in URL. Refreshing context...");
+            refreshAuth();
+        }
+    }, [searchParams, refreshAuth]);
+    return null;
 }
