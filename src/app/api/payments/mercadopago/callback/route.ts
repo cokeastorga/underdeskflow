@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase/admin-config";
+import { cookies } from "next/headers";
 
 export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
@@ -25,6 +26,20 @@ export async function GET(req: NextRequest) {
 
     const redirectUri = `${appUrl}/api/payments/mercadopago/callback`;
 
+    // --- PKCE Retrieval ---
+    const cookieStore = await cookies();
+    const codeVerifier = cookieStore.get("mp_code_verifier")?.value;
+    
+    // Clean up cookie immediately
+    cookieStore.delete("mp_code_verifier");
+
+    if (!codeVerifier) {
+        console.warn("[MP Callback] Missing code_verifier in cookies.");
+        // We will try without it just in case, or fail early. 
+        // MP error said it's required, so we should probably fail.
+        return NextResponse.json({ error: "Missing PKCE verifier (session expired or cookies blocked)." }, { status: 400 });
+    }
+
     try {
         // Exchange code for Access Token
         const tokenRes = await fetch("https://api.mercadopago.com/oauth/token", {
@@ -38,7 +53,8 @@ export async function GET(req: NextRequest) {
                 client_id: clientId,
                 grant_type: "authorization_code",
                 code,
-                redirect_uri: redirectUri
+                redirect_uri: redirectUri,
+                code_verifier: codeVerifier // PKCE piece
             })
         });
 
