@@ -1,11 +1,12 @@
 
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, Suspense } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase/config";
 import { signOut } from "firebase/auth";
+import { useSearchParams } from "next/navigation";
 
 interface AuthContextType {
     user: User | null;
@@ -57,6 +58,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             console.error("Error refreshing auth context:", error);
         }
     };
+
+    // Instant Refresh Mechanism for Payment Returns
+    // This is separated into a sub-component to safely use useSearchParams within a Suspense boundary
+    function PaymentRefreshHandler() {
+        const searchParams = useSearchParams();
+        useEffect(() => {
+            const mpStatus = searchParams.get("mp_status");
+            if (mpStatus === "approved" || mpStatus === "success") {
+                console.log("[Auth] Payment success detected in URL. Refreshing context...");
+                refreshAuth();
+            }
+        }, [searchParams]);
+        return null;
+    }
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -151,6 +166,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return (
         <AuthContext.Provider value={{ user, storeId, role, store, loading, refreshAuth }}>
+            <Suspense fallback={null}>
+                <PaymentRefreshHandler />
+            </Suspense>
             {children}
         </AuthContext.Provider>
     );
