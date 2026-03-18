@@ -121,7 +121,7 @@ export async function processMercadoPagoNotification(
         const storeId = intentData.storeId || "HQ_PLATFORM";
         
         // Fetch Token (HQ vs Tenant)
-        let accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
+        let accessToken = process.env.MP_ACCESS_TOKEN || process.env.MERCADOPAGO_ACCESS_TOKEN;
         if (storeId !== "HQ_PLATFORM") {
             const storeInteg = await adminDb.doc(`stores/${storeId}/integrations/mercadopago`).get();
             if (storeInteg.exists) accessToken = storeInteg.data()?.accessToken;

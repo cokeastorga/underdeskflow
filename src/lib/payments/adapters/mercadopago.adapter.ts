@@ -16,7 +16,7 @@ import {
 } from "@/types/payments";
 
 const mpClient = new MercadoPagoConfig({
-    accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN ?? "",
+    accessToken: process.env.MP_ACCESS_TOKEN || process.env.MERCADOPAGO_ACCESS_TOKEN || "",
     options: { timeout: 10_000, idempotencyKey: undefined },
 });
 
@@ -37,7 +37,7 @@ export class MercadoPagoAdapter implements PaymentProviderAdapter {
         } catch (e) {
             console.error("[MP Adapter] Failed to fetch HQ Access Token from Firestore, using ENV fallback");
         }
-        return process.env.MERCADOPAGO_ACCESS_TOKEN ?? "";
+        return process.env.MP_ACCESS_TOKEN || process.env.MERCADOPAGO_ACCESS_TOKEN || "";
     }
 
     private async getHQClient(): Promise<MercadoPagoConfig> {
@@ -71,7 +71,7 @@ export class MercadoPagoAdapter implements PaymentProviderAdapter {
                     pending: `${baseUrl}/api/payments/intents/${intent.id}/return?status=pending`,
                 },
                 auto_return: "approved",
-                notification_url: `${baseUrl}/api/webhooks/payments/mercadopago`,
+                notification_url: `${baseUrl}/api/payments/webhooks/mercadopago`,
                 metadata: {
                     internal_intent_id: intent.id,
                     store_id: intent.store_id,
@@ -309,7 +309,7 @@ export class MercadoPagoAdapter implements PaymentProviderAdapter {
     }
 
     async queryRefundStatus(providerRefundId: string): Promise<RefundStatusResult> {
-        const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN ?? "";
+        const accessToken = process.env.MP_ACCESS_TOKEN || process.env.MERCADOPAGO_ACCESS_TOKEN || "";
         const res = await fetch(`https://api.mercadopago.com/v1/payments/refunds/${providerRefundId}`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
