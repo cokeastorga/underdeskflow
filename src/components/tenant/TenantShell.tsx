@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/firebase/auth-context";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, Package, Settings, LogOut, Store, ShoppingCart, Users, Megaphone, MapPin, ClipboardList, Menu, Palette, Truck, CreditCard, BarChart2, LayoutGrid, Globe, TrendingUp, Bell, Activity, AlertCircle, Search, Eye, MessageCircle, MonitorSmartphone } from "lucide-react";
+import { LayoutDashboard, Package, Settings, LogOut, Store, ShoppingCart, Users, Megaphone, MapPin, ClipboardList, Menu, Palette, Truck, CreditCard, BarChart2, LayoutGrid, Globe, TrendingUp, Bell, Activity, AlertCircle, Search, Eye, MessageCircle, MonitorSmartphone, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { auth, db } from "@/lib/firebase/config";
@@ -30,7 +30,7 @@ export function TenantShell({
 }: {
     children: React.ReactNode;
 }) {
-    const { user, storeId, role } = useAuth();
+    const { user, storeId, role, isImpersonating, stopImpersonating } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
     const [store, setStore] = useState<any>(null);
@@ -305,7 +305,27 @@ export function TenantShell({
                         </div>
                     </header>
 
-                    <div className="p-6 md:p-8 min-h-[calc(100vh-4rem)]">
+                    <div className="p-6 md:p-8 min-h-[calc(100vh-4rem)] relative">
+                        {isImpersonating && (
+                            <div className="mb-6 rounded-xl bg-violet-600 shadow-lg shadow-violet-600/20 overflow-hidden flex flex-col md:flex-row items-center justify-between p-4 gap-4 border border-violet-500/30 animate-in fade-in slide-in-from-top-4 duration-500">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center text-white shrink-0">
+                                        <ShieldAlert className="h-5 w-5" />
+                                    </div>
+                                    <div>
+                                        <p className="text-white font-bold text-sm uppercase tracking-tight">Modo Soporte Activo</p>
+                                        <p className="text-violet-100 text-xs opacity-90 italic">Estás viendo este panel como si fueras el dueño de esta tienda.</p>
+                                    </div>
+                                </div>
+                                <Button 
+                                    onClick={stopImpersonating}
+                                    variant="secondary" 
+                                    className="bg-white text-violet-600 hover:bg-zinc-100 font-bold px-6 h-10 shadow-sm"
+                                >
+                                    Volver al HQ Panel
+                                </Button>
+                            </div>
+                        )}
                         {user && !user.emailVerified && (
                             <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-900 text-yellow-800 dark:text-yellow-200 px-4 py-3 rounded-md mb-6 flex items-center gap-3">
                                 <div className="flex-1 text-sm">

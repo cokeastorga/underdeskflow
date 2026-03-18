@@ -161,3 +161,59 @@ export async function getSuperAdminAnalytics(): Promise<SuperAdminFinancials> {
         storesMissingMp
     };
 }
+export interface DailyMetric {
+    date: string; // ISO yyyy-mm-dd
+    gmv: number;
+    fees: number;
+}
+
+/**
+ * Returns daily GMV and Platform Fees for the last 30 days.
+ * Used for the Enterprise HQ Dashboard trends.
+ */
+export async function getSuperAdminTimeSeries(): Promise<DailyMetric[]> {
+    const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+    
+    // Fetch PAID intents from last 30 days
+    const snapshot = await adminDb.collection("payment_intents")
+        .where("status", "==", "PAID")
+        .where("created_at", ">=", thirtyDaysAgo)
+        .orderBy("created_at", "asc")
+        .get();
+
+    const dailyMap = new Map<string, { gmv: number, fees: number }>();
+
+    // 1. Initialize map with all 30 days to ensure no gaps in the chart
+    for (let i = 0; i < 30; i++) {
+        const d = new Date(Date.now() - (i * 24 * 60 * 60 * 1000));
+        const key = d.toISOString().split('T')[0];
+        dailyMap.set(key, { gmv: 0, fees: 0 });
+    }
+
+    // 2. Aggregate actual data
+    snapshot.docs.forEach(doc => {
+        const data = doc.data();
+        const ts = data.created_at;
+        const dateKey = new Date(ts).toISOString().split('T')[0];
+        
+        if (dailyMap.has(dateKey)) {
+            const vals = dailyMap.get(dateKey)!;
+            const amount = data.amount || 0;
+            const fee = data.platform_fee_amount ?? Math.round(amount * 0.08);
+            
+            dailyMap.set(dateKey, {
+                gmv: vals.gmv + amount,
+                fees: vals.fees + fee
+            });
+        }
+    });
+
+    // 3. Convert to sorted array
+    return Array.from(dailyMap.entries())
+        .map(([date, vals]) => ({
+            date,
+            gmv: vals.gmv,
+            fees: vals.fees
+        }))
+        .sort((a, b) => a.date.localeCompare(b.date));
+}

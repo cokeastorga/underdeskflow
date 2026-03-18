@@ -14,7 +14,9 @@ interface AuthContextType {
     role: "platform_admin" | "tenant_admin" | "store_manager" | "cashier" | null;
     store: any | null; // Detailed store data including planId
     loading: boolean;
+    isImpersonating: boolean;
     refreshAuth: () => Promise<void>;
+    stopImpersonating: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -23,16 +25,27 @@ const AuthContext = createContext<AuthContextType>({
     role: null,
     store: null,
     loading: true,
+    isImpersonating: false,
     refreshAuth: async () => {},
+    stopImpersonating: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
+
+function getCookie(name: string) {
+    if (typeof document === "undefined") return null;
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop()?.split(";").shift();
+    return null;
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [storeId, setStoreId] = useState<string | null>(null);
     const [role, setRole] = useState<"platform_admin" | "tenant_admin" | "store_manager" | "cashier" | null>(null);
     const [store, setStore] = useState<any | null>(null);
+    const [isImpersonating, setIsImpersonating] = useState(false);
     const [loading, setLoading] = useState(true);
 
     const refreshAuth = async () => {
@@ -43,20 +56,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const userDoc = await getDoc(doc(db, "users", currentUser.uid));
             if (userDoc.exists()) {
                 const userData = userDoc.data();
-                const sId = userData.storeId || null;
+                const actualRole = userData.role || null;
+                setRole(actualRole);
+
+                // Handle impersonation for platform admins
+                const impId = getCookie("udf_impersonate");
+                const sId = (actualRole === "platform_admin" && impId) ? impId : (userData.storeId || null);
+                
                 setStoreId(sId);
-                setRole(userData.role || null);
+                setIsImpersonating(!!(actualRole === "platform_admin" && impId));
 
                 if (sId) {
                     const storeDoc = await getDoc(doc(db, "stores", sId));
                     if (storeDoc.exists()) {
                         setStore({ id: storeDoc.id, ...storeDoc.data() });
                     }
+                } else {
+                    setStore(null);
                 }
             }
         } catch (error) {
             console.error("Error refreshing auth context:", error);
         }
+    };
+
+    const stopImpersonating = async () => {
+        await fetch("/api/superadmin/impersonate", { method: "DELETE" });
+        setIsImpersonating(false);
+        refreshAuth();
     };
 
     // Instant Refresh Mechanism for Payment Returns
@@ -109,15 +136,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     const userDoc = await getDoc(doc(db, "users", user.uid));
                     if (userDoc.exists()) {
                         const userData = userDoc.data();
-                        const sId = userData.storeId || null;
+                        const actualRole = userData.role || null;
+                        setRole(actualRole);
+
+                        // Handle impersonation for platform admins
+                        const impId = getCookie("udf_impersonate");
+                        const sId = (actualRole === "platform_admin" && impId) ? impId : (userData.storeId || null);
+                        
                         setStoreId(sId);
-                        setRole(userData.role || null);
+                        setIsImpersonating(!!(actualRole === "platform_admin" && impId));
 
                         if (sId) {
                             const storeDoc = await getDoc(doc(db, "stores", sId));
                             if (storeDoc.exists()) {
                                 setStore({ id: storeDoc.id, ...storeDoc.data() });
                             }
+                        } else {
+                            setStore(null);
                         }
                     } else {
                         // SELF-HEALING: If it's Jorge and profile is missing, recreate it
@@ -131,17 +166,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                             };
                             await setDoc(doc(db, "users", user.uid), newProfile);
                             setRole("platform_admin");
+                            
+                            // Check impersonation for the newly created profile too
+                            const impId = getCookie("udf_impersonate");
+                            if (impId) {
+                                setStoreId(impId);
+                                setIsImpersonating(true);
+                                const storeDoc = await getDoc(doc(db, "stores", impId));
+                                if (storeDoc.exists()) {
+                                    setStore({ id: storeDoc.id, ...storeDoc.data() });
+                                }
+                            }
                         } else {
                             setStoreId(null);
                             setRole(null);
                             setStore(null);
+                            setIsImpersonating(false);
                         }
                     }
                     setUser(user);
                 } catch (error) {
                     console.error("Error during authentication state update:", error);
-                    // We don't force logout here to stay resilient to transient network issues
-                    // The user will still have an active Firebase Auth session on the client
                 }
             } else {
                 // User is signed out
@@ -149,6 +194,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setStoreId(null);
                 setRole(null);
                 setStore(null);
+                setIsImpersonating(false);
 
                 // Clear server session
                 await fetch("/api/auth/logout", { method: "POST" });
@@ -165,7 +211,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, storeId, role, store, loading, refreshAuth }}>
+        <AuthContext.Provider value={{ user, storeId, role, store, loading, isImpersonating, refreshAuth, stopImpersonating }}>
             <Suspense fallback={null}>
                 <PaymentRefreshHandler />
             </Suspense>

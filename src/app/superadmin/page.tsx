@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, Landmark, Store, BarChart, PlusCircle, Building, AlertCircle } from "lucide-react";
-import { getSuperAdminAnalytics } from "@/domains/analytics/services.server";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -36,8 +35,14 @@ function SuperAdminActions() {
     );
 }
 
+import { getSuperAdminAnalytics, getSuperAdminTimeSeries } from "@/domains/analytics/services.server";
+import { RevenueChart } from "@/components/superadmin/RevenueChart";
+
 export default async function SuperAdminDashboard() {
-    const analytics = await getSuperAdminAnalytics();
+    const [analytics, timeSeries] = await Promise.all([
+        getSuperAdminAnalytics(),
+        getSuperAdminTimeSeries()
+    ]);
 
     return (
         <div className="p-8 space-y-8 max-w-7xl mx-auto">
@@ -51,6 +56,10 @@ export default async function SuperAdminDashboard() {
             <Suspense fallback={<div className="h-24 bg-muted/20 animate-pulse rounded-xl my-6" />}>
                 <SuperAdminActions />
             </Suspense>
+
+            <div className="grid gap-6">
+                 <RevenueChart data={timeSeries} />
+            </div>
 
             {analytics.storesMissingMp && analytics.storesMissingMp.length > 0 && (
                 <Alert variant="destructive" className="bg-red-500/10 border-red-500/20 text-red-600 dark:text-red-400">
