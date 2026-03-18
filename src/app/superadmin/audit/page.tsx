@@ -10,6 +10,7 @@ import {
     Calendar, User, Building, Info 
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 async function getGlobalAuditLogs() {
     const snap = await adminDb.collection("audit_logs")
@@ -129,4 +130,3 @@ export default async function GlobalAuditPage() {
     );
 }
 
-import { Button } from "@/components/ui/button";

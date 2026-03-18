@@ -174,12 +174,40 @@ export interface DailyMetric {
 export async function getSuperAdminTimeSeries(): Promise<DailyMetric[]> {
     const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
     
-    // Fetch PAID intents from last 30 days
-    const snapshot = await adminDb.collection("payment_intents")
-        .where("status", "==", "PAID")
-        .where("created_at", ">=", thirtyDaysAgo)
-        .orderBy("created_at", "asc")
-        .get();
+    // Fetch PAID intents from last 30 days - with index fallback
+    let snapshot: FirebaseFirestore.QuerySnapshot;
+    try {
+        snapshot = await adminDb.collection("payment_intents")
+            .where("status", "==", "PAID")
+            .where("created_at", ">=", thirtyDaysAgo)
+            .orderBy("created_at", "asc")
+            .get();
+    } catch (err: any) {
+        const isMissingIndex =
+            err?.code === 9 || 
+            err?.message?.includes("FAILED_PRECONDITION") ||
+            err?.message?.includes("index");
+
+        if (isMissingIndex) {
+            console.warn("[TimeSeries] Index missing, falling back to in-memory sort.");
+            snapshot = await adminDb.collection("payment_intents")
+                .where("status", "==", "PAID")
+                .where("created_at", ">=", thirtyDaysAgo)
+                .get();
+            
+            // In-memory sort by created_at ascending
+            const sortedDocs = [...snapshot.docs].sort((a, b) => {
+                const aTs = a.data().created_at ?? 0;
+                const bTs = b.data().created_at ?? 0;
+                const aVal = typeof aTs === "number" ? aTs : aTs?.toMillis?.() ?? 0;
+                const bVal = typeof bTs === "number" ? bTs : bTs?.toMillis?.() ?? 0;
+                return aVal - bVal;
+            });
+            snapshot = { ...snapshot, docs: sortedDocs } as any;
+        } else {
+            throw err;
+        }
+    }
 
     const dailyMap = new Map<string, { gmv: number, fees: number }>();
 

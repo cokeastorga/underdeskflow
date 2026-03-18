@@ -1,8 +1,8 @@
 import { getStoreFeatures, getStoreBasicInfo } from "./actions";
 import FeatureClient from "./FeatureClient";
 
-export default async function StoreFeaturesPage({ params }: { params: { id: string } }) {
-    const storeId = params.id;
+export default async function StoreFeaturesPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id: storeId } = await params;
     const [features, storeInfo] = await Promise.all([
         getStoreFeatures(storeId),
         getStoreBasicInfo(storeId)

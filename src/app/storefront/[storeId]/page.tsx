@@ -5,9 +5,10 @@ import { Product, Variant, Category } from "@/domains/catalog/types";
 // Served automatically via Next.js Middleware Rewrite for Custom Domains
 // URL shape internally: /storefront/[storeId]
 
-export default async function StorefrontPage({ params }: { params: { storeId: string } }) {
+export default async function StorefrontPage({ params }: { params: Promise<{ storeId: string }> }) {
+    const { storeId } = await params;
     // 1. Fetch Store Config
-    const storeSnap = await adminDb.collection("stores").doc(params.storeId).get();
+    const storeSnap = await adminDb.collection("stores").doc(storeId).get();
     if (!storeSnap.exists) {
         return (
             <div className="flex h-screen items-center justify-center p-8 bg-slate-50">
@@ -21,7 +22,7 @@ export default async function StorefrontPage({ params }: { params: { storeId: st
     const storeData = storeSnap.data()!;
 
     // 2. Fetch Catalog (Categories + Products)
-    const prodsSnap = await adminDb.collection("products").where("storeId", "==", params.storeId).where("isActive", "==", true).limit(50).get();
+    const prodsSnap = await adminDb.collection("products").where("storeId", "==", storeId).where("isActive", "==", true).limit(50).get();
     const rawProducts = prodsSnap.docs.map(d => ({id: d.id, ...d.data()} as Product));
 
     // 3. Fetch Base Variants for Pricing
