@@ -74,25 +74,30 @@ export async function getSuperAdminAnalytics(): Promise<SuperAdminFinancials> {
             err?.message?.includes("index");
 
         if (isMissingIndex) {
-            console.warn("[SuperAdmin] Composite index not ready — falling back to in-memory sort. Create index: payment_intents[status ASC, created_at DESC].");
-            // Fetch without orderBy, then sort client-side
-            const fallbackSnap = await adminDb.collection("payment_intents")
-                .where("status", "==", "PAID")
-                .limit(500)
-                .get();
-            
-            // Sort in-memory by created_at descending
-            const sortedDocs = [...fallbackSnap.docs].sort((a, b) => {
-                const aTs = a.data().created_at ?? 0;
-                const bTs = b.data().created_at ?? 0;
-                return (typeof bTs === "number" ? bTs : bTs?.toMillis?.() ?? 0) -
-                       (typeof aTs === "number" ? aTs : aTs?.toMillis?.() ?? 0);
-            });
-            
-            // Build a minimal QuerySnapshot-compatible object for the rest of the function
-            recentPaymentsSnap = { ...fallbackSnap, docs: sortedDocs, size: sortedDocs.length } as any;
+            console.warn("[SuperAdmin] Composite index not ready — falling back to in-memory sort.");
+            try {
+                // Fetch without orderBy, then sort client-side
+                const fallbackSnap = await adminDb.collection("payment_intents")
+                    .where("status", "==", "PAID")
+                    .limit(500)
+                    .get();
+                
+                // Sort in-memory by created_at descending
+                const sortedDocs = [...fallbackSnap.docs].sort((a, b) => {
+                    const aTs = a.data().created_at ?? 0;
+                    const bTs = b.data().created_at ?? 0;
+                    const bVal = typeof bTs === "number" ? bTs : bTs?.toMillis?.() ?? 0;
+                    const aVal = typeof aTs === "number" ? aTs : aTs?.toMillis?.() ?? 0;
+                    return bVal - aVal;
+                });
+                
+                recentPaymentsSnap = { ...fallbackSnap, docs: sortedDocs, size: sortedDocs.length } as any;
+            } catch (fallbackErr) {
+                console.error("[SuperAdmin] Ultimate fallback failed:", fallbackErr);
+                // Return a mock empty snapshot to prevent a 500 error
+                recentPaymentsSnap = { docs: [], size: 0, forEach: () => {} } as any;
+            }
         } else {
-            // Unknown error — surface it so we don't silently swallow real bugs
             throw err;
         }
     }
@@ -199,20 +204,25 @@ export async function getSuperAdminTimeSeries(): Promise<DailyMetric[]> {
 
         if (isMissingIndex) {
             console.warn("[TimeSeries] Index missing, falling back to in-memory sort.");
-            snapshot = await adminDb.collection("payment_intents")
-                .where("status", "==", "PAID")
-                .where("created_at", ">=", thirtyDaysAgo)
-                .get();
-            
-            // In-memory sort by created_at ascending
-            const sortedDocs = [...snapshot.docs].sort((a, b) => {
-                const aTs = a.data().created_at ?? 0;
-                const bTs = b.data().created_at ?? 0;
-                const aVal = typeof aTs === "number" ? aTs : aTs?.toMillis?.() ?? 0;
-                const bVal = typeof bTs === "number" ? bTs : bTs?.toMillis?.() ?? 0;
-                return aVal - bVal;
-            });
-            snapshot = { ...snapshot, docs: sortedDocs } as any;
+            try {
+                snapshot = await adminDb.collection("payment_intents")
+                    .where("status", "==", "PAID")
+                    .where("created_at", ">=", thirtyDaysAgo)
+                    .get();
+                
+                // In-memory sort by created_at ascending
+                const sortedDocs = [...snapshot.docs].sort((a, b) => {
+                    const aTs = a.data().created_at ?? 0;
+                    const bTs = b.data().created_at ?? 0;
+                    const aVal = typeof aTs === "number" ? aTs : aTs?.toMillis?.() ?? 0;
+                    const bVal = typeof bTs === "number" ? bTs : bTs?.toMillis?.() ?? 0;
+                    return aVal - bVal;
+                });
+                snapshot = { ...snapshot, docs: sortedDocs } as any;
+            } catch (fallbackErr) {
+                console.error("[TimeSeries] Ultimate fallback failed:", fallbackErr);
+                snapshot = { docs: [] } as any;
+            }
         } else {
             throw err;
         }
