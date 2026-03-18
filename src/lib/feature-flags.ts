@@ -23,11 +23,11 @@ export type FeatureFlag =
 
 /** Which plans have access to each flag */
 const FLAG_PLAN_MAP: Record<FeatureFlag, PlanId[]> = {
-    ENTERPRISE_CHANNEL_SYNC: ["enterprise"],
-    MULTI_LOCATION: ["intermedio", "enterprise"],
-    ADVANCED_ANALYTICS: ["intermedio", "enterprise"],
-    MULTI_USER: ["enterprise"],
-    WHITE_LABEL: ["enterprise"],
+    ENTERPRISE_CHANNEL_SYNC: ["Enterprise"],
+    MULTI_LOCATION: ["Pro", "Enterprise"],
+    ADVANCED_ANALYTICS: ["Pro", "Enterprise"],
+    MULTI_USER: ["Enterprise"],
+    WHITE_LABEL: ["Enterprise"],
 };
 
 // ─── Server-side API ─────────────────────────────────────────────────────────
@@ -43,7 +43,7 @@ export async function isFeatureEnabled(
     try {
         const storeSnap = await adminDb.collection("stores").doc(storeId).get();
         if (!storeSnap.exists) return false;
-        const plan = (storeSnap.data()?.plan ?? "basic") as PlanId;
+        const plan = (storeSnap.data()?.plan ?? "Basic") as PlanId;
         return isPlanAllowed(flag, plan);
     } catch {
         // Fail closed: if we can't verify, deny

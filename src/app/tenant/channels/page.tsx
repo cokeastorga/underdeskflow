@@ -238,7 +238,7 @@ export default function ChannelsPage() {
     const [fetching, setFetching] = useState(true);
 
     // For now, read plan from store doc (to be replaced with useStorePlan hook)
-    const [plan, setPlan] = useState<string>("basic");
+    const [plan, setPlan] = useState<string>("Basic");
 
     useEffect(() => {
         if (!storeId) return;
@@ -247,7 +247,7 @@ export default function ChannelsPage() {
         import("@/lib/firebase/config").then(({ db }) => {
             import("firebase/firestore").then(({ doc, getDoc }) => {
                 getDoc(doc(db, "stores", storeId)).then(snap => {
-                    if (snap.exists()) setPlan(snap.data().plan ?? "basic");
+                    if (snap.exists()) setPlan(snap.data().plan ?? "Basic");
                 });
             });
         });
@@ -272,7 +272,7 @@ export default function ChannelsPage() {
     }
 
     // Gate: Enterprise only
-    if (plan !== "enterprise") {
+    if (plan !== "Enterprise") {
         return <EnterpriseUpgradePrompt />;
     }
 

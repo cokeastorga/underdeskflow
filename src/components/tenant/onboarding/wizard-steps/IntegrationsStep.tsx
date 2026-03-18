@@ -21,7 +21,7 @@ interface IntegrationsStepProps {
 }
 
 export function IntegrationsStep({ store, onNext }: IntegrationsStepProps) {
-    const isEnterprise = store.plan === "enterprise";
+    const isEnterprise = store.plan === "Enterprise";
 
     return (
         <div className="space-y-10">

@@ -11,10 +11,10 @@ function fmtDate(ms: number) {
 export default async function SuperAdminBillingPage() {
     const subscriptions = await getAllSubscriptions();
 
-    const activeCount = subscriptions.filter(s => s.status === "ACTIVE").length;
+    const activeCount = subscriptions.filter(s => s.status === "active").length;
     const totalRevenue = subscriptions.reduce((acc, s) => {
         const plan = PLANS[s.planId];
-        return s.status === "ACTIVE" ? acc + plan.monthlyPrice : acc;
+        return s.status === "active" ? acc + plan.monthlyPrice : acc;
     }, 0);
 
     const stats = [
@@ -74,8 +74,8 @@ export default async function SuperAdminBillingPage() {
                                                 </Badge>
                                             </td>
                                             <td className="py-4 px-4">
-                                                <Badge variant="outline" className={sub.status === "ACTIVE" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-red-500/10 text-red-400 border-red-500/20"}>
-                                                    {sub.status}
+                                                <Badge variant="outline" className={sub.status === "active" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-red-500/10 text-red-400 border-red-500/20"}>
+                                                    <span className="capitalize">{sub.status}</span>
                                                 </Badge>
                                             </td>
                                             <td className="py-4 px-4 text-zinc-500 text-xs">

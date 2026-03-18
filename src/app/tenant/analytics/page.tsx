@@ -60,7 +60,7 @@ export default function AnalyticsPage() {
     const { storeId } = useAuth();
     const router = useRouter();
 
-    const [storePlan, setStorePlan] = useState<string>("basic");
+    const [storePlan, setStorePlan] = useState<string>("Basic");
     const [kpi, setKpi] = useState<KpiData>({
         totalRevenue: 0, ownStoreRevenue: 0, externalRevenue: 0,
         totalOrders: 0, ownStoreOrders: 0, externalOrders: 0,
@@ -84,7 +84,7 @@ export default function AnalyticsPage() {
     useEffect(() => {
         if (!storeId) return;
         getDoc(doc(db, "stores", storeId)).then(snap => {
-            if (snap.exists()) setStorePlan(snap.data().plan ?? "basic");
+            if (snap.exists()) setStorePlan(snap.data().plan ?? "Basic");
         });
         load();
     }, [storeId]);
@@ -203,7 +203,7 @@ export default function AnalyticsPage() {
     }
 
     const maxChart = Math.max(...chartData.map(d => d.ownStore + d.external), 1);
-    const isEnterprise = storePlan === "enterprise";
+    const isEnterprise = storePlan === "Enterprise";
 
     // ── Sub-components ────────────────────────────────────────────────────────
 

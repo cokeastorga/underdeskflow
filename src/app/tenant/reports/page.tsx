@@ -541,7 +541,7 @@ export default function ReportsPage() {
         if (!storeId) return;
         fetch(`/api/store/plan?storeId=${storeId}`)
             .then(r => r.json())
-            .then((d: { plan?: string }) => setIsEnterprise(d.plan === "enterprise"))
+            .then((d: { plan?: string }) => setIsEnterprise(d.plan === "Enterprise"))
             .catch(() => { });
     }, [user, storeId]);
 
