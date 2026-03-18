@@ -39,6 +39,14 @@ export async function processMercadoPagoNotification(
             );
             
             if (parts.ts && parts.v1) {
+                // Anti-replay: Verify the notification is recent (5 minute window)
+                const requestTimestamp = parseInt(parts.ts, 10);
+                const currentTime = Date.now();
+                if (Math.abs(currentTime - requestTimestamp) > 5 * 60 * 1000) {
+                    logger.error("[NotificationProcessor] Request too old (Replay Attack?)", { requestId, ts: parts.ts });
+                    return { received: false, error: "Request too old" };
+                }
+
                 const communitiesToSign = `id:${xRequestId};request-date:${parts.ts};`;
                 const expectedSig = createHmac("sha256", secret).update(communitiesToSign).digest("hex");
                 

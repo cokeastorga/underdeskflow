@@ -2,17 +2,18 @@
 
 import { adminAuth, adminDb } from "@/lib/firebase/admin-config";
 import { revalidatePath } from "next/cache";
+import { getVerifiedStore } from "@/lib/auth/get-verified-store";
 
 export type TeamRole = "tenant_admin" | "store_manager" | "cashier";
 
 export async function inviteMemberAction(
-    storeId: string, 
     email: string, 
     firstName: string, 
     lastName: string, 
     role: TeamRole
 ) {
-    if (!storeId || !email || !role) {
+    const { storeId } = await getVerifiedStore();
+    if (!email || !role) {
         throw new Error("Faltan campos obligatorios");
     }
 
@@ -74,7 +75,8 @@ export async function inviteMemberAction(
     }
 }
 
-export async function removeMemberAction(storeId: string, userId: string) {
+export async function removeMemberAction(userId: string) {
+    const { storeId } = await getVerifiedStore();
     try {
         await adminDb.collection("stores").doc(storeId).collection("team").doc(userId).delete();
         await adminDb.collection("users").doc(userId).update({

@@ -8,8 +8,13 @@ import { MercadoPagoAdapter } from "@/lib/payments/adapters/mercadopago.adapter"
 import { PaymentIntent } from "@/types/payments";
 import { randomUUID } from "crypto";
 
-export async function upgradePlanAction(storeId: string, userId: string, newPlanId: PlanId) {
-    if (!storeId || !userId || !newPlanId) {
+import { getVerifiedStore } from "@/lib/auth/get-verified-store";
+
+export async function upgradePlanAction(newPlanId: PlanId) {
+    const verified = await getVerifiedStore();
+    const { storeId, uid: userId } = verified;
+
+    if (!newPlanId) {
         throw new Error("Missing required fields for upgrade");
     }
 

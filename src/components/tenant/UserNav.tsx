@@ -17,7 +17,7 @@ import { signOut } from "firebase/auth";
 import { User, CreditCard, Settings, LogOut } from "lucide-react";
 
 export function UserNav() {
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
 
     return (
         <DropdownMenu>
@@ -57,7 +57,7 @@ export function UserNav() {
                     </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => signOut(auth)} className="text-red-600 focus:text-red-600">
+                <DropdownMenuItem onClick={() => logout()} className="text-red-600 focus:text-red-600">
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Cerrar Sesión</span>
                     <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>

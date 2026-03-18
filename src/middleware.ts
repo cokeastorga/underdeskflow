@@ -14,7 +14,7 @@ export const config = {
     ],
 };
 
-export async function proxy(req: NextRequest) {
+export async function middleware(req: NextRequest) {
     const url = req.nextUrl;
 
     // ── 1. Auth guard (merged from proxy.ts) ────────────────────────────────

@@ -17,6 +17,7 @@ interface AuthContextType {
     isImpersonating: boolean;
     refreshAuth: () => Promise<void>;
     stopImpersonating: () => Promise<void>;
+    logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -28,6 +29,7 @@ const AuthContext = createContext<AuthContextType>({
     isImpersonating: false,
     refreshAuth: async () => {},
     stopImpersonating: async () => {},
+    logout: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -192,12 +194,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     const logout = async () => {
-        await fetch("/api/auth/logout", { method: "POST" });
-        await signOut(auth);
+        try {
+            // 1. Revoke server-side session and clear HttpOnly cookies
+            await fetch("/api/auth/logout", { 
+                method: "POST",
+                headers: { "Content-Type": "application/json" }
+            });
+
+            // 2. Clear client-side Firebase session
+            await signOut(auth);
+
+            // 3. Clear local state (signaled by onAuthStateChanged, but explicit for safety)
+            setUser(null);
+            setRole(null);
+            setStoreId(null);
+
+            // 4. Hard reset to flush all memory state and caches
+            window.location.href = "/login";
+        } catch (error) {
+            console.error("Enterprise Logout failed:", error);
+            // Fallback: simple sign out and redirect
+            await signOut(auth);
+            window.location.href = "/login";
+        }
     };
 
     return (
-        <AuthContext.Provider value={{ user, storeId, role, store, loading, isImpersonating, refreshAuth, stopImpersonating }}>
+        <AuthContext.Provider value={{ user, storeId, role, store, loading, isImpersonating, refreshAuth, stopImpersonating, logout }}>
             <Suspense fallback={null}>
                 <PaymentRefreshHandler refreshAuth={refreshAuth} />
             </Suspense>

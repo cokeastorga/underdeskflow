@@ -30,7 +30,7 @@ export function TenantShell({
 }: {
     children: React.ReactNode;
 }) {
-    const { user, storeId, role, isImpersonating, stopImpersonating } = useAuth();
+    const { user, storeId, role, isImpersonating, stopImpersonating, logout } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
     const [store, setStore] = useState<any>(null);
@@ -124,13 +124,13 @@ export function TenantShell({
                         <SheetContent side="left" className="p-0 w-72">
                             <SheetTitle className="sr-only">Navegación</SheetTitle>
                             <SheetDescription className="sr-only">Menú principal</SheetDescription>
-                            <SidebarContent store={store} role={role} storeId={storeId} conflictCount={conflictCount} />
+                            <SidebarContent store={store} role={role} storeId={storeId} conflictCount={conflictCount} logout={logout} />
                         </SheetContent>
                     </Sheet>
                 </header>
 
                 <div className="hidden md:block w-64 fixed h-full z-30">
-                    <SidebarContent store={store} role={role} storeId={storeId} conflictCount={conflictCount} />
+                    <SidebarContent store={store} role={role} storeId={storeId} conflictCount={conflictCount} logout={logout} />
                 </div>
 
                 {/* Main Content */}
@@ -245,7 +245,7 @@ export function TenantShell({
     );
 }
 
-function SidebarContent({ store, role, storeId, conflictCount }: { store: any; role: any; storeId: any; conflictCount: number }) {
+function SidebarContent({ store, role, storeId, conflictCount, logout }: { store: any; role: any; storeId: any; conflictCount: number; logout: () => Promise<void> }) {
     return (
         <div className="flex flex-col h-full bg-white dark:bg-zinc-900 border-r border-gray-200 dark:border-zinc-800">
             <div className="p-6">
@@ -382,7 +382,7 @@ function SidebarContent({ store, role, storeId, conflictCount }: { store: any; r
                 <Button
                     variant="ghost"
                     className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
-                    onClick={() => signOut(auth)}
+                    onClick={() => logout()}
                 >
                     <LogOut className="h-4 w-4 mr-2" />
                     Cerrar Sesión

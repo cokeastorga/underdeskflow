@@ -2,8 +2,10 @@
 
 import { adminDb } from "@/lib/firebase/admin-config";
 import { revalidatePath } from "next/cache";
+import { verifyRole } from "@/lib/auth/role-guard";
 
 export async function getStoreFeatures(storeId: string) {
+    await verifyRole(["platform_admin"]);
     const doc = await adminDb.doc(`stores/${storeId}/config/features`).get();
     const defaultFeatures = {
         customDomain: false,
@@ -19,6 +21,7 @@ export async function getStoreFeatures(storeId: string) {
 }
 
 export async function updateStoreFeatures(storeId: string, features: any) {
+    await verifyRole(["platform_admin"]);
     await adminDb.doc(`stores/${storeId}/config/features`).set(features, { merge: true });
     
     // Also update the main store document for quick checks if needed
@@ -29,6 +32,7 @@ export async function updateStoreFeatures(storeId: string, features: any) {
 }
 
 export async function getStoreBasicInfo(storeId: string) {
+    await verifyRole(["platform_admin"]);
     const doc = await adminDb.doc(`stores/${storeId}`).get();
     return { id: doc.id, name: doc.data()?.name || doc.id };
 }
