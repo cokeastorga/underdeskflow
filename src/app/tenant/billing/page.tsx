@@ -161,9 +161,14 @@ export default function BillingPage() {
             const result = await upgradePlanAction(storeId, user.uid, selectedUpgradePlan.id);
 
             if (result.success) {
-                toast.success("¡Plan actualizado exitosamente!", { id: toastId });
-                // Force a hard reload to refresh all context/feature guards as requested
-                window.location.reload();
+                if (result.checkoutUrl) {
+                    toast.success("Redirigiendo a Mercado Pago...", { id: toastId });
+                    window.location.href = result.checkoutUrl;
+                } else {
+                    toast.success("¡Plan actualizado exitosamente!", { id: toastId });
+                    // Force a hard reload to refresh all context/feature guards as requested
+                    window.location.reload();
+                }
             }
         } catch (error: any) {
             console.error("Error in subscription upgrade:", error);

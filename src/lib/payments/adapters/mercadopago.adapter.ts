@@ -75,6 +75,7 @@ export class MercadoPagoAdapter implements PaymentProviderAdapter {
                 metadata: {
                     internal_intent_id: intent.id,
                     store_id: intent.store_id,
+                    ...(intent.metadata || {})
                 },
             },
             requestOptions: { idempotencyKey: `mp-create-${intent.id}` },

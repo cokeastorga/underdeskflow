@@ -22,11 +22,26 @@ export async function getSubscription(tenantId: string): Promise<Subscription> {
 }
 
 export async function updateSubscription(tenantId: string, data: Partial<Subscription>) {
-    await subsCol.doc(tenantId).set({
-        id: tenantId,
-        ...data,
-        updatedAt: Date.now()
-    }, { merge: true });
+    await adminDb.runTransaction(async (transaction) => {
+        const subRef = subsCol.doc(tenantId);
+        const storeRef = adminDb.collection("stores").doc(tenantId);
+
+        // Update Subscription
+        transaction.set(subRef, {
+            id: tenantId,
+            ...data,
+            updatedAt: Date.now()
+        }, { merge: true });
+
+        // Sync with Store if planId changed
+        if (data.planId) {
+            transaction.update(storeRef, {
+                planId: data.planId,
+                subscriptionStatus: data.status || "active",
+                updatedAt: Date.now()
+            });
+        }
+    });
 }
 
 export async function getPlanFeatures(tenantId: string) {
