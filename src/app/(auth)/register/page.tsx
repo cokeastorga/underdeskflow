@@ -71,9 +71,13 @@ export default function RegisterPage() {
 
             const role = (user.email === targetEmail || isFirstUser) ? "platform_admin" : "tenant_admin";
 
-            // Send verification email
+            // Send verification email with ActionCodeSettings for resilience
             const { sendEmailVerification } = await import("firebase/auth");
-            await sendEmailVerification(user);
+            const actionCodeSettings = {
+                url: `${window.location.origin}/login?verify=success`,
+                handleCodeInApp: true,
+            };
+            await sendEmailVerification(user, actionCodeSettings);
 
             // Create user document with enhanced profile
             await setDoc(doc(db, "users", user.uid), {

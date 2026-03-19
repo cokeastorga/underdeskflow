@@ -61,6 +61,25 @@ export default function AdminLoginPage() {
         }
     };
 
+    const handleResendVerification = async () => {
+        if (!user) return;
+        setIsLoggingIn(true);
+        try {
+            const { sendEmailVerification } = await import("firebase/auth");
+            const actionCodeSettings = {
+                url: `${window.location.origin}/login?verify=success`,
+                handleCodeInApp: true,
+            };
+            await sendEmailVerification(user, actionCodeSettings);
+            toast.success("Correo de verificación re-enviado. Revisa tu spam.");
+        } catch (error: any) {
+            console.error("Resend error:", error);
+            toast.error("Error al re-enviar el correo. Inténtalo más tarde.");
+        } finally {
+            setIsLoggingIn(false);
+        }
+    };
+
     const handleGoogleLogin = async () => {
         setIsLoggingIn(true);
         try {
@@ -134,6 +153,22 @@ export default function AdminLoginPage() {
                         {typeof window !== "undefined" && window.location.search.includes("verify-email") && (
                             <div className="mt-4 p-3 rounded-xl bg-primary/10 border border-primary/20 text-primary text-xs font-medium animate-pulse">
                                 Hemos enviado un link de verificación a tu correo.
+                            </div>
+                        )}
+                        {user && !user.emailVerified && role === "tenant_admin" && (
+                            <div className="mt-4 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 space-y-3">
+                                <p className="text-xs text-amber-500 font-medium">
+                                    Tu cuenta requiere verificación. Si no recibiste el correo, haz clic abajo.
+                                </p>
+                                <Button 
+                                    size="sm" 
+                                    variant="outline" 
+                                    className="w-full text-[10px] h-8 border-amber-500/30 text-amber-500 hover:bg-amber-500/10"
+                                    onClick={handleResendVerification}
+                                    disabled={isLoggingIn}
+                                >
+                                    Re-enviar código de verificación
+                                </Button>
                             </div>
                         )}
                     </div>
