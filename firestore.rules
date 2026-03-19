@@ -23,8 +23,8 @@ service cloud.firestore {
     }
 
     match /stores/{storeId} {
-      allow read: if isTenantAdmin(storeId);
-      allow write: if isTenantAdmin(storeId);
+      allow create: if isAuthenticated();
+      allow read, write: if isAuthenticated() && (request.auth.token.storeId == storeId || resource.data.ownerId == request.auth.uid);
     }
     
     // Public Catalog (Readable for storefront, protected for writes)

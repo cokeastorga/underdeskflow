@@ -27,7 +27,7 @@ export default function AdminLoginPage() {
             // Only enforce for tenant_admins (optional, but requested by user)
             // If user logged in but not verified, stay here and show notice.
             if (!user.emailVerified && role === "tenant_admin") {
-                toast.error("Por favor, verifica tu correo electrónico antes de continuar.");
+                router.push("/verify-email");
                 return;
             }
 

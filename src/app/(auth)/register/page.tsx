@@ -91,8 +91,8 @@ export default function RegisterPage() {
                 onboardingComplete: false
             });
 
+            router.push("/verify-email");
             toast.success("¡Cuenta creada! Por favor, verifica tu correo electrónico.");
-            router.push("/login?message=verify-email");
         } catch (error: any) {
             console.error("Registration error:", error);
             if (error.code === 'auth/email-already-in-use') {
@@ -143,7 +143,10 @@ export default function RegisterPage() {
                 onboardingComplete: false
             }, { merge: true });
 
-            router.push(role === "platform_admin" ? "/superadmin" : "/tenant/onboarding");
+            const destination = (role === "platform_admin") 
+                ? "/superadmin" 
+                : (user.emailVerified ? "/tenant/onboarding" : "/verify-email");
+            router.push(destination);
         } catch (error: any) {
             console.error("Google register error:", error);
             toast.error("Falló el registro con Google.");
