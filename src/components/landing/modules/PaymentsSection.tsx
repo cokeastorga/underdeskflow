@@ -1,6 +1,6 @@
 "use client";
 import { motion } from "framer-motion";
-import { CreditCard, Lock, ShieldCheck, Zap, ArrowRight, RefreshCcw, Globe } from "lucide-react";
+import { CreditCard, Lock, ShieldCheck, Zap, ArrowRight, RefreshCcw, Globe, Check } from "lucide-react";
 
 const fdUp = (i = 0) => ({
     initial: { opacity: 0, y: 32 },

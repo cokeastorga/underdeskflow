@@ -1,6 +1,6 @@
 "use client";
 import { motion } from "framer-motion";
-import { BarChart2, TrendingUp, DollarSign, PieChart } from "lucide-react";
+import { BarChart2, TrendingUp, Users, DollarSign, Target, PieChart } from "lucide-react";
 
 const fdUp = (i = 0) => ({
     initial: { opacity: 0, y: 32 },
