@@ -41,20 +41,18 @@ export default async function LandingPage() {
                 {/* Enterprise Hardening Proof */}
                 <SecurityHardeningSection />
                 
-                {!isFirstRun && (
-                    <div className="flex flex-col gap-24 md:gap-32">
-                        <StoreSetupSection />
-                        <DesignSection />
-                        <ProductsSection />
-                        <ShippingSection />
-                        <PaymentsSection />
-                        <AnalyticsSection />
-                        <CrmSection />
-                        <MarketingSection />
-                        <CategoriesSection />
-                        <PricingSection />
-                    </div>
-                )}
+                <div className="flex flex-col gap-24 md:gap-32">
+                    <StoreSetupSection />
+                    <DesignSection />
+                    <ProductsSection />
+                    <ShippingSection />
+                    <PaymentsSection />
+                    <AnalyticsSection />
+                    <CrmSection />
+                    <MarketingSection />
+                    <CategoriesSection />
+                    <PricingSection />
+                </div>
                 
                 <LandingFooter />
             </div>

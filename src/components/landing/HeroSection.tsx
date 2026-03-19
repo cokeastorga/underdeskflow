@@ -44,7 +44,7 @@ export default function HeroSection({ isFirstRun }: { isFirstRun?: boolean }) {
 
             {/* ── Animated gradient background video replacement */}
             <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute inset-0 bg-gradient-to-b from-background via-background to-background" />
+                <div className="absolute inset-0 bg-gradient-to-b from-zinc-950 via-zinc-950 to-zinc-950" />
                 <motion.div
                     animate={{ scale: [1, 1.15, 1], opacity: [0.6, 0.9, 0.6] }}
                     transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
