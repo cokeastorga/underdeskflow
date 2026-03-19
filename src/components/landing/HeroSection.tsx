@@ -32,10 +32,10 @@ function Counter({ to, duration = 2 }: { to: number; duration?: number }) {
 }
 
 const STATS = [
-    { icon: TrendingUp, value: 4800000, prefix: "$", suffix: "", label: "GMV procesado hoy", color: "text-emerald-400" },
-    { icon: ShoppingBag, value: 1284, prefix: "", suffix: "", label: "Órdenes activas", color: "text-blue-400" },
-    { icon: CreditCard, value: 99.9, prefix: "", suffix: "%", label: "Uptime garantizado", color: "text-violet-400" },
-    { icon: Users, value: 3721, prefix: "", suffix: "", label: "Comercios activos", color: "text-amber-400" },
+    { icon: TrendingUp, value: 12400000, prefix: "$", suffix: "", label: "GMV Total Procesado", color: "text-emerald-400" },
+    { icon: ShoppingBag, value: 15402, prefix: "", suffix: "", label: "Transacciones Exitosas", color: "text-blue-400" },
+    { icon: CreditCard, value: 99.98, prefix: "", suffix: "%", label: "Uptime de Red (Edge)", color: "text-violet-400" },
+    { icon: Users, value: 452, prefix: "", suffix: "", label: "Instancias Multi-Tenant", color: "text-amber-400" },
 ];
 
 export default function HeroSection({ isFirstRun }: { isFirstRun?: boolean }) {
@@ -92,17 +92,17 @@ export default function HeroSection({ isFirstRun }: { isFirstRun?: boolean }) {
 
                 {/* Headline */}
                 <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35, duration: 0.7 }}
-                    className="text-6xl md:text-8xl lg:text-9xl font-bold tracking-tight font-serif leading-[1.0] mb-8">
-                    {isFirstRun ? "Empecemos a" : "Tu negocio."}
+                    className="text-6xl md:text-8xl lg:text-9xl font-bold tracking-tighter leading-[0.9] mb-8 bg-clip-text text-transparent bg-gradient-to-b from-white to-white/40">
+                    {isFirstRun ? "Escala tu" : "Infraestructura"}
                     <br />
-                    <span className="text-gradient">{isFirstRun ? "Construir." : "Online."}</span>
+                    <span className="text-primary">{isFirstRun ? "Comercio." : "de Clase Mundial."}</span>
                 </motion.h1>
 
                 <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
-                    className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed mb-12">
+                    className="text-xl md:text-2xl text-zinc-400 max-w-3xl mx-auto leading-relaxed mb-12 font-light">
                     {isFirstRun 
-                        ? "La base de datos está lista. Crea tu cuenta de SuperAdmin para configurar la plataforma y empezar a recibir comercios." 
-                        : "Diseña tu tienda, gestiona productos, coordina envíos y recibe pagos — todo desde un panel de control pensado para crecer."}
+                        ? "La base de datos está lista. Despliega tu instancia de SuperAdmin y comienza a operar con aislamiento de datos de grado militar y routing optimizado en el Edge." 
+                        : "Potencia tu red de ventas con un motor multi-tenant blindado. Gestión de dominios con validación DNS, seguridad HMAC y una arquitectura distribuida lista para el mañana."}
                 </motion.p>
 
                 {/* CTAs */}
@@ -208,24 +208,40 @@ export default function HeroSection({ isFirstRun }: { isFirstRun?: boolean }) {
                                     />
                                 </svg>
                             </div>
-                            {/* Recent orders */}
+                            {/* Infrastructure & Security indicators */}
                             <div className="grid grid-cols-2 gap-3">
+                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.8 }}
+                                    className="rounded-xl bg-violet-500/10 border border-violet-500/20 p-3 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-2 w-2 rounded-full bg-violet-400 animate-pulse" />
+                                        <p className="text-[10px] font-bold text-violet-300 uppercase tracking-widest">Edge Proxy Active</p>
+                                    </div>
+                                    <p className="text-[10px] font-mono text-violet-400/70">Region: iad1</p>
+                                </motion.div>
+                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.9 }}
+                                    className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-2 w-2 rounded-full bg-emerald-400" />
+                                        <p className="text-[10px] font-bold text-emerald-300 uppercase tracking-widest">DNS Verified</p>
+                                    </div>
+                                    <p className="text-[10px] font-mono text-emerald-400/70">TXT: udf-auth</p>
+                                </motion.div>
+                            </div>
+                            {/* Recent activities with security focus */}
+                            <div className="grid grid-cols-1 gap-2">
                                 {[
-                                    { order: "#2841", product: "Zapatillas Air Max", amount: "$89.990", status: "Pagado" },
-                                    { order: "#2840", product: "Polera Premium", amount: "$24.990", status: "En despacho" },
+                                    { msg: "Pago procesado via Webhook (HMAC verificado)", time: "Hace 2m", type: "success" },
+                                    { msg: "Nuevo dominio custom vinculado: tienda.cl", time: "Hace 15m", type: "info" },
                                 ].map((o, i) => (
-                                    <motion.div key={o.order}
-                                        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                                        transition={{ delay: 1.8 + i * 0.1 }}
-                                        className="rounded-xl bg-white/4 border border-white/8 p-3 flex items-center justify-between">
-                                        <div>
-                                            <p className="text-xs font-mono text-muted-foreground">{o.order}</p>
-                                            <p className="text-sm font-medium mt-0.5">{o.product}</p>
+                                    <motion.div key={o.msg}
+                                        initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: 2.0 + i * 0.1 }}
+                                        className="rounded-lg bg-white/3 border border-white/5 px-3 py-2 flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <div className={`h-1.5 w-1.5 rounded-full ${o.type === 'success' ? 'bg-emerald-400' : 'bg-blue-400'}`} />
+                                            <p className="text-[11px] text-zinc-400">{o.msg}</p>
                                         </div>
-                                        <div className="text-right">
-                                            <p className="text-sm font-bold text-emerald-400">{o.amount}</p>
-                                            <p className="text-xs text-muted-foreground">{o.status}</p>
-                                        </div>
+                                        <p className="text-[9px] text-zinc-600 italic">{o.time}</p>
                                     </motion.div>
                                 ))}
                             </div>
