@@ -100,8 +100,8 @@ export default function HeroSection({ isFirstRun }: { isFirstRun?: boolean }) {
 
                 <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
                     className="text-xl md:text-2xl text-zinc-400 max-w-3xl mx-auto leading-relaxed mb-12 font-light">
-                    {isFirstRun 
-                        ? "La base de datos está lista. Despliega tu instancia de SuperAdmin y comienza a operar con aislamiento de datos de grado militar y routing optimizado en el Edge." 
+                    {isFirstRun
+                        ? ""
                         : "Potencia tu red de ventas con un motor multi-tenant blindado. Gestión de dominios con validación DNS, seguridad HMAC y una arquitectura distribuida lista para el mañana."}
                 </motion.p>
 
