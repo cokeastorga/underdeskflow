@@ -1,198 +1,181 @@
 "use client";
 import { motion } from "framer-motion";
-import { Truck, MapPin, Clock, Package } from "lucide-react";
-
-const CARRIERS = [
-    { name: "Starken", color: "#ff6b35", status: "Conectado", time: "24-48h" },
-    { name: "Chilexpress", color: "#e31837", status: "Conectado", time: "48-72h" },
-    { name: "Blue Express", color: "#1e40af", status: "Conectado", time: "24h" },
-    { name: "Correos de Chile", color: "#006400", status: "Disponible", time: "72-96h" },
-];
-
-const SHIPMENTS = [
-    { id: "#SHP-2841", dest: "Santiago, RM", carrier: "Starken", status: "En camino", progress: 80 },
-    { id: "#SHP-2840", dest: "Valparaíso, V", carrier: "Blue Express", status: "Despachado", progress: 40 },
-    { id: "#SHP-2839", dest: "Concepción, VIII", carrier: "Chilexpress", status: "Entregado", progress: 100 },
-    { id: "#SHP-2838", dest: "Antofagasta, II", carrier: "Starken", status: "Preparando", progress: 15 },
-];
-
-const STATUS_COLORS: Record<string, string> = {
-    "En camino": "text-blue-400",
-    "Despachado": "text-amber-400",
-    "Entregado": "text-emerald-400",
-    "Preparando": "text-muted-foreground",
-};
+import { Truck, MapPin, Clock, Search, Check, ShieldCheck, Globe } from "lucide-react";
 
 const fdUp = (i = 0) => ({
-    initial: { opacity: 0, y: 28 },
+    initial: { opacity: 0, y: 32 },
     whileInView: { opacity: 1, y: 0 },
-    transition: { delay: i * 0.08, duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number] },
+    transition: { delay: i * 0.1, duration: 0.65, ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number] },
     viewport: { once: true },
 });
 
 export default function ShippingSection() {
     return (
         <section id="envios" className="relative overflow-hidden">
-
-            {/* ── Section A: Carriers ── */}
-            <div className="relative min-h-screen flex items-center py-28 px-6 bg-gradient-to-br from-amber-950/10 via-background to-background">
-                <div className="absolute inset-0 pointer-events-none">
-                    <motion.div
-                        animate={{ scale: [1, 1.2, 1], opacity: [0.4, 0.7, 0.4] }}
-                        transition={{ duration: 7, repeat: Infinity }}
-                        className="absolute bottom-0 right-1/4 w-[500px] h-[400px] bg-amber-500/5 rounded-full blur-[130px]"
-                    />
-                </div>
-
-                <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center relative z-10">
-                    {/* Shipping dashboard mock */}
-                    <motion.div {...fdUp(0)} className="rounded-3xl border border-white/8 bg-card/70 backdrop-blur-xl shadow-2xl overflow-hidden">
-                        <div className="p-5 border-b border-white/6 flex items-center gap-3">
-                            <Truck className="h-5 w-5 text-amber-400" />
-                            <span className="font-semibold">Gestión de Envíos</span>
-                            <span className="ml-auto text-xs bg-amber-500/15 border border-amber-500/30 text-amber-400 px-2.5 py-1 rounded-lg font-medium">
-                                4 activos
-                            </span>
+            {/* ── Section A: Automated Logistics ── */}
+            <div className="relative min-h-screen flex items-center py-32 px-6">
+                <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-24 items-center relative z-10">
+                    <motion.div {...fdUp(0)}>
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-bold uppercase tracking-widest mb-6">
+                            <Truck className="h-3 w-3" /> Logística Avanzada
                         </div>
-
-                        {/* Carrier pills */}
-                        <div className="p-5 border-b border-white/5">
-                            <p className="text-xs text-muted-foreground mb-3 font-medium uppercase tracking-wider">Carriers integrados</p>
-                            <div className="grid grid-cols-2 gap-2">
-                                {CARRIERS.map((c, i) => (
-                                    <motion.div key={c.name}
-                                        initial={{ opacity: 0, scale: 0.9 }}
-                                        whileInView={{ opacity: 1, scale: 1 }}
-                                        transition={{ delay: 0.1 + i * 0.08 }}
-                                        viewport={{ once: true }}
-                                        className="flex items-center gap-3 p-3 rounded-xl border border-white/6 bg-white/2">
-                                        <div className="h-8 w-8 rounded-lg flex items-center justify-center text-xs font-bold"
-                                            style={{ backgroundColor: c.color + "20", color: c.color }}>
-                                            {c.name.slice(0, 2)}
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-medium">{c.name}</p>
-                                            <p className="text-xs text-muted-foreground">{c.time}</p>
-                                        </div>
-                                        <div className={`ml-auto h-2 w-2 rounded-full ${c.status === "Conectado" ? "bg-emerald-400" : "bg-muted-foreground"}`} />
-                                    </motion.div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Shipments list */}
-                        <div>
-                            <p className="px-5 pt-4 text-xs text-muted-foreground font-medium uppercase tracking-wider mb-2">Órdenes en tránsito</p>
-                            {SHIPMENTS.map((s, i) => (
-                                <motion.div key={s.id}
-                                    initial={{ opacity: 0, x: -15 }}
-                                    whileInView={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: 0.2 + i * 0.1 }}
-                                    viewport={{ once: true }}
-                                    className="px-5 py-3.5 border-t border-white/5">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs font-mono text-muted-foreground">{s.id}</span>
-                                            <span className={`text-xs font-semibold ${STATUS_COLORS[s.status]}`}>{s.status}</span>
-                                        </div>
-                                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                            <MapPin className="h-3 w-3" />{s.dest}
-                                        </div>
-                                    </div>
-                                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                                        <motion.div
-                                            initial={{ width: 0 }}
-                                            whileInView={{ width: `${s.progress}%` }}
-                                            transition={{ delay: 0.4 + i * 0.1, duration: 0.8, ease: "easeOut" }}
-                                            viewport={{ once: true }}
-                                            className={`h-full rounded-full ${s.progress === 100 ? "bg-emerald-500" : s.progress > 50 ? "bg-blue-500" : s.progress > 20 ? "bg-amber-500" : "bg-muted-foreground"}`}
-                                        />
-                                    </div>
-                                    <p className="text-[10px] text-muted-foreground mt-1">{s.carrier}</p>
-                                </motion.div>
+                        <h2 className="text-5xl md:text-7xl font-bold tracking-tighter text-white mb-8 leading-[0.9]">
+                            Entregas en <span className="text-amber-400">Record.</span>
+                        </h2>
+                        <p className="text-xl text-zinc-400 leading-relaxed mb-10 font-light">
+                            Conecta tu tienda con los principales carriers en minutos. Automatiza la generación de etiquetas y ofrece tarifas dinámicas basadas en peso y zona.
+                        </p>
+                        <div className="grid grid-cols-2 gap-4">
+                            {[
+                                { title: "Multi-Carrier", desc: "Starken, Chilexpress, Blue y más integrados." },
+                                { title: "Etiquetado Auto", desc: "Generación masiva de etiquetas de envío." }
+                            ].map((f, i) => (
+                                <div key={i} className="p-4 rounded-xl bg-zinc-900/40 border border-zinc-800">
+                                    <p className="text-sm font-bold text-white mb-1 tracking-tight">{f.title}</p>
+                                    <p className="text-xs text-zinc-500 leading-relaxed">{f.desc}</p>
+                                </div>
                             ))}
                         </div>
                     </motion.div>
 
-                    <div>
-                        <motion.div {...fdUp(0)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold uppercase tracking-widest mb-6">
-                            <Truck className="h-3.5 w-3.5" /> Módulo 4 · Logística
-                        </motion.div>
-                        <motion.h2 {...fdUp(1)} className="text-5xl md:text-6xl font-bold tracking-tight font-serif leading-tight mb-6">
-                            Envíos que<br />
-                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-orange-400">llegan a tiempo.</span>
-                        </motion.h2>
-                        <motion.p {...fdUp(2)} className="text-xl text-muted-foreground leading-relaxed mb-8">
-                            Conecta con Starken, Chilexpress, Blue Express y más. Reglas automáticas de despacho, zonas de cobertura y envío gratis configurable.
-                        </motion.p>
-                        <motion.div {...fdUp(3)} className="grid grid-cols-2 gap-4">
-                            {[
-                                { icon: Truck, label: "Carriers integrados", val: "8" },
-                                { icon: MapPin, label: "Zonas de cobertura", val: "329" },
-                                { icon: Clock, label: "Tiempo de despacho", val: "<24h" },
-                                { icon: Package, label: "Pickups configurables", val: "∞" },
-                            ].map(item => (
-                                <div key={item.label} className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/15 flex items-center gap-3">
-                                    <div className="h-9 w-9 rounded-xl bg-amber-500/10 flex items-center justify-center flex-shrink-0">
-                                        <item.icon className="h-4 w-4 text-amber-400" />
+                    <motion.div {...fdUp(1)} className="rounded-3xl border border-zinc-800 bg-zinc-900/60 p-8 shadow-2xl relative overflow-hidden group">
+                        <div className="flex items-center justify-between mb-8 border-b border-zinc-800 pb-4">
+                             <div>
+                                <p className="text-white font-bold tracking-tight">Consola de Despacho</p>
+                                <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest mt-1">Status: Operational</p>
+                             </div>
+                             <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                        </div>
+                        <div className="space-y-4">
+                             {[
+                                { id: "SHP-2841", carrier: "Starken", dest: "Antofagasta", status: "In Transit" },
+                                { id: "SHP-2840", carrier: "Blue Express", dest: "Santiago", status: "Processing" },
+                                { id: "SHP-2839", carrier: "Chilexpress", dest: "Concepción", status: "Pickup Ready" },
+                             ].map((s, i) => (
+                                 <div key={i} className="flex items-center justify-between p-4 rounded-xl bg-zinc-950 border border-zinc-800 group-hover:border-amber-500/30 transition-colors">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-8 w-8 rounded-lg bg-zinc-900 flex items-center justify-center text-[10px] font-bold text-zinc-500">
+                                            {s.carrier.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-mono text-zinc-500">{s.id}</p>
+                                            <p className="text-sm font-bold text-white">{s.dest}</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="text-lg font-bold">{item.val}</p>
-                                        <p className="text-xs text-muted-foreground">{item.label}</p>
+                                    <div className="text-right">
+                                        <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest">{s.status}</p>
+                                        <p className="text-xs text-zinc-600 font-medium">ETA: 48h</p>
                                     </div>
-                                </div>
-                            ))}
-                        </motion.div>
-                    </div>
+                                 </div>
+                             ))}
+                        </div>
+                    </motion.div>
                 </div>
             </div>
 
-            {/* ── Section B: Shipping zones visual map ── */}
-            <div className="py-24 px-6 border-t border-white/5 bg-muted/10">
-                <div className="max-w-5xl mx-auto">
-                    <motion.div {...fdUp(0)} className="text-center mb-14">
-                        <p className="text-xs font-semibold tracking-widest text-amber-400 uppercase mb-3">Cobertura Nacional</p>
-                        <h3 className="text-4xl font-bold font-serif">Despacha a todo Chile</h3>
-                        <p className="text-muted-foreground mt-3">Configura reglas por región, comuna o código postal. Precios dinámicos por peso y distancia.</p>
+            {/* ── Section B: Zone-Based Dispatch & Pricing ── */}
+            <div className="relative py-32 px-6 border-t border-zinc-900 bg-zinc-900/10">
+                <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-24 items-center relative z-10">
+                    <motion.div {...fdUp(1)} className="order-last lg:order-first">
+                        <div className="rounded-3xl border border-zinc-800 bg-zinc-900/40 p-1">
+                            <div className="bg-zinc-950 rounded-[22px] p-8 shadow-2xl">
+                                <div className="flex items-center gap-3 mb-8">
+                                    <div className="h-10 w-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center">
+                                        <MapPin className="h-5 w-5 text-amber-400" />
+                                    </div>
+                                    <p className="text-sm font-bold text-white tracking-tight">Tarificador dinámico por Zona</p>
+                                </div>
+                                <div className="space-y-6">
+                                    <div className="flex items-center justify-between text-zinc-500 border-b border-zinc-900 pb-4">
+                                        <span className="text-xs uppercase font-bold tracking-widest">Zona Central (RM)</span>
+                                        <span className="text-sm font-mono text-amber-400">$2.990</span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-zinc-500 border-b border-zinc-900 pb-4">
+                                        <span className="text-xs uppercase font-bold tracking-widest">Zona Extrema (Magallanes)</span>
+                                        <span className="text-sm font-mono text-amber-400 font-bold">$12.450</span>
+                                    </div>
+                                    <div className="pt-4">
+                                        <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/10 flex items-center gap-3">
+                                            <ShieldCheck className="h-4 w-4 text-emerald-400" />
+                                            <span className="text-xs text-emerald-400 font-medium">Regla: Envío gratis sobre $50k activada</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </motion.div>
-                    <div className="grid md:grid-cols-3 gap-5">
-                        {[
-                            { region: "Norte Grande", comunas: "Arica, Iquique, Antofagasta", time: "48-72h", color: "from-amber-500/20" },
-                            { region: "Zona Central", comunas: "RM, Valparaíso, O'Higgins", time: "24-48h", color: "from-blue-500/20" },
-                            { region: "Sur & Austral", comunas: "Biobío, Los Ríos, Magallanes", time: "72-96h", color: "from-emerald-500/20" },
-                        ].map((zone, i) => (
-                            <motion.div key={zone.region} {...fdUp(i * 0.15)}
-                                className={`p-6 rounded-2xl border border-white/8 bg-gradient-to-b ${zone.color} to-transparent`}>
-                                <div className="flex items-center justify-between mb-3">
-                                    <h4 className="font-semibold">{zone.region}</h4>
-                                    <span className="text-xs text-amber-400 font-mono bg-amber-500/10 px-2 py-0.5 rounded-lg">{zone.time}</span>
-                                </div>
-                                <p className="text-sm text-muted-foreground">{zone.comunas}</p>
-                                <div className="mt-4 h-24 rounded-xl bg-white/3 border border-white/5 relative overflow-hidden">
-                                    {/* Abstract map visualization */}
-                                    {Array.from({ length: 6 }).map((_, j) => (
-                                        <motion.div key={j}
-                                            className="absolute h-1 rounded-full bg-current opacity-20"
-                                            style={{
-                                                width: `${40 + j * 8}%`,
-                                                left: `${5 + j * 3}%`,
-                                                top: `${15 + j * 12}%`,
-                                                color: j % 2 === 0 ? "#60a5fa" : "#34d399"
-                                            }}
-                                            animate={{ opacity: [0.1, 0.4, 0.1] }}
-                                            transition={{ duration: 2 + j * 0.4, repeat: Infinity, delay: j * 0.3 }}
-                                        />
-                                    ))}
-                                    <motion.div
-                                        animate={{ scale: [1, 1.3, 1], opacity: [0.6, 1, 0.6] }}
-                                        transition={{ duration: 2, repeat: Infinity, delay: i * 0.5 }}
-                                        className={`absolute w-3 h-3 rounded-full bg-amber-400`}
-                                        style={{ left: `${30 + i * 15}%`, top: "40%" }}
-                                    />
-                                </div>
-                            </motion.div>
-                        ))}
-                    </div>
+
+                    <motion.div {...fdUp(0)}>
+                        <h3 className="text-4xl md:text-5xl font-bold tracking-tighter text-white mb-6">
+                            Reglas de <span className="text-amber-400">Despacho.</span>
+                        </h3>
+                        <p className="text-lg text-zinc-400 leading-relaxed font-light mb-8">
+                            Control absoluto sobre tus costos de envío. Crea zonas de precios, límites de peso y reglas de envío gratuito personalizadas por ciudad o región.
+                        </p>
+                        <ul className="space-y-4">
+                            {[
+                                "Tarifas dinámicas en tiempo real",
+                                "Zonas de cobertura ilimitadas",
+                                "Promociones de envío condicionales",
+                                "Soporte para Retiro en Tienda (Pick-up)"
+                            ].map((f, i) => (
+                                <li key={i} className="flex items-center gap-3 text-zinc-500">
+                                    <Check className="h-4 w-4 text-amber-400" />
+                                    <span className="text-sm font-medium">{f}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </motion.div>
+                </div>
+            </div>
+
+            {/* ── Section C: Real-Time Tracking UX ── */}
+            <div className="relative py-32 px-6">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-20">
+                    <motion.div {...fdUp(0)} className="md:w-1/2">
+                        <h3 className="text-4xl md:text-5xl font-bold tracking-tighter text-white mb-6">Tracking en <span className="text-amber-400">Tiempo Real.</span></h3>
+                        <p className="text-lg text-zinc-400 font-light leading-relaxed mb-8">
+                            Mejora la experiencia post-venta. Provee a tus clientes de un portal de seguimiento detallado y notificaciones automáticas por cada cambio de estado.
+                        </p>
+                        <div className="flex gap-4">
+                            <div className="text-center p-6 rounded-2xl bg-zinc-900/40 border border-zinc-800 flex-1">
+                                <Clock className="h-6 w-6 text-amber-400 mx-auto mb-3" />
+                                <p className="text-xl font-bold text-white tracking-tighter">Instant</p>
+                                <p className="text-[10px] text-zinc-600 uppercase font-bold tracking-widest mt-1">Updates</p>
+                            </div>
+                            <div className="text-center p-6 rounded-2xl bg-zinc-900/40 border border-zinc-800 flex-1">
+                                <Globe className="h-6 w-6 text-amber-400 mx-auto mb-3" />
+                                <p className="text-xl font-bold text-white tracking-tighter">Global</p>
+                                <p className="text-[10px] text-zinc-600 uppercase font-bold tracking-widest mt-1">Connectivity</p>
+                            </div>
+                        </div>
+                    </motion.div>
+
+                    <motion.div {...fdUp(1)} className="md:w-1/2 relative">
+                         <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-8 shadow-2xl relative overflow-hidden">
+                             <div className="flex items-center justify-between mb-8">
+                                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Order Tracking</span>
+                                <span className="text-[10px] font-mono text-amber-400">#2940-STK</span>
+                             </div>
+                             <div className="space-y-8 relative">
+                                {/* Vertical line */}
+                                <div className="absolute left-1 top-2 bottom-2 w-px bg-zinc-800" />
+                                {[
+                                    { status: "Entregado", time: "14:20 PM", done: true },
+                                    { status: "En Ruta de Entrega", time: "09:15 AM", done: true },
+                                    { status: "En Centro de Distribución", time: "Yesterday", done: false },
+                                ].map((step, i) => (
+                                    <div key={i} className="flex gap-6 items-start relative z-10">
+                                        <div className={`h-2.5 w-2.5 rounded-full ${step.done ? "bg-amber-400" : "bg-zinc-800"} ring-4 ring-zinc-950`} />
+                                        <div>
+                                            <p className={`text-sm font-bold ${step.done ? "text-white" : "text-zinc-600"}`}>{step.status}</p>
+                                            <p className="text-[10px] text-zinc-500 font-mono mt-1">{step.time}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                             </div>
+                         </div>
+                    </motion.div>
                 </div>
             </div>
         </section>

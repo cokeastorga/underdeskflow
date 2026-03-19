@@ -1,177 +1,174 @@
 "use client";
 import { motion } from "framer-motion";
-import { BarChart2, TrendingUp, Users, DollarSign } from "lucide-react";
+import { BarChart2, TrendingUp, DollarSign, PieChart } from "lucide-react";
 
 const fdUp = (i = 0) => ({
-    initial: { opacity: 0, y: 28 },
+    initial: { opacity: 0, y: 32 },
     whileInView: { opacity: 1, y: 0 },
-    transition: { delay: i * 0.08, duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number] },
+    transition: { delay: i * 0.1, duration: 0.65, ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number] },
     viewport: { once: true },
 });
 
-const REVENUE_DATA = [30, 45, 38, 60, 55, 72, 68, 85, 78, 92, 88, 100];
-const MONTHS = ["Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic", "Ene", "Feb"];
-const TOP_PRODUCTS = [
-    { name: "Air Max 2026", revenue: 89, change: "+24%" },
-    { name: "Jeans Slim", revenue: 67, change: "+18%" },
-    { name: "Polera Premium", revenue: 54, change: "+31%" },
-    { name: "Bolso Cuero", revenue: 41, change: "+8%" },
-    { name: "Gafas UV400", revenue: 32, change: "-3%" },
-];
-
 export default function AnalyticsSection() {
-    const max = Math.max(...REVENUE_DATA);
-
     return (
         <section id="analytics" className="relative overflow-hidden">
-
-            {/* ── Section A: Revenue chart ── */}
-            <div className="relative min-h-screen flex items-center py-28 px-6 bg-gradient-to-tl from-indigo-950/15 via-background to-background">
-                <div className="absolute inset-0 pointer-events-none">
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-indigo-500/5 rounded-full blur-[130px]" />
-                </div>
-
-                <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center relative z-10">
-                    <div>
-                        <motion.div {...fdUp(0)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold uppercase tracking-widest mb-6">
-                            <BarChart2 className="h-3.5 w-3.5" /> Módulo 6 · Analytics
-                        </motion.div>
-                        <motion.h2 {...fdUp(1)} className="text-5xl md:text-6xl font-bold tracking-tight font-serif leading-tight mb-6">
-                            Datos que te<br />
-                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-cyan-400">hacen crecer.</span>
-                        </motion.h2>
-                        <motion.p {...fdUp(2)} className="text-xl text-muted-foreground leading-relaxed mb-8">
-                            Dashboards en tiempo real. GMV, conversión, ticket promedio, cohortes de clientes y proyecciones de crecimiento — todo en un solo lugar.
-                        </motion.p>
-                        <motion.div {...fdUp(3)} className="grid grid-cols-2 gap-4">
-                            {[
-                                { icon: DollarSign, label: "GMV total rastreado", val: "$48M+" },
-                                { icon: TrendingUp, label: "Crecimiento promedio", val: "+34%" },
-                                { icon: Users, label: "Compradores únicos", val: "52K+" },
-                                { icon: BarChart2, label: "Tasa de conversión", val: "3.8%" },
-                            ].map(m => (
-                                <div key={m.label} className="p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/15">
-                                    <m.icon className="h-4 w-4 text-indigo-400 mb-2" />
-                                    <p className="text-xl font-bold">{m.val}</p>
-                                    <p className="text-xs text-muted-foreground mt-0.5">{m.label}</p>
-                                </div>
-                            ))}
-                        </motion.div>
-                    </div>
-
-                    {/* Revenue chart mock */}
-                    <motion.div {...fdUp(1)} className="rounded-3xl border border-white/8 bg-card/70 backdrop-blur-xl shadow-2xl p-6">
-                        <div className="flex items-center justify-between mb-1">
-                            <div>
-                                <p className="text-xs text-muted-foreground">Ingresos totales</p>
-                                <motion.p
-                                    initial={{ opacity: 0 }} whileInView={{ opacity: 1 }}
-                                    transition={{ delay: 0.5 }} viewport={{ once: true }}
-                                    className="text-3xl font-bold">
-                                    $48,291,430
-                                </motion.p>
+            {/* ── Section A: Business Intelligence Engine ── */}
+            <div className="relative min-h-screen flex items-center py-32 px-6">
+                <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-24 items-center relative z-10">
+                    <motion.div {...fdUp(0)}>
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-bold uppercase tracking-widest mb-6">
+                            <BarChart2 className="h-3 w-3" /> Data & Intelligence
+                        </div>
+                        <h2 className="text-5xl md:text-7xl font-bold tracking-tighter text-white mb-8 leading-[0.9]">
+                            Datos que <span className="text-indigo-400">Deciden.</span>
+                        </h2>
+                        <p className="text-xl text-zinc-400 leading-relaxed mb-10 font-light">
+                            Dashboards financieros de alta fidelidad. Monitorea GMV, Ticket Promedio y Cohortes de Retención en tiempo real con una precisión del 99.9%.
+                        </p>
+                        <div className="grid grid-cols-2 gap-4 text-center">
+                            <div className="p-6 rounded-2xl bg-zinc-900/40 border border-zinc-800">
+                                <DollarSign className="h-6 w-6 text-indigo-400 mx-auto mb-2" />
+                                <p className="text-2xl font-bold text-white tracking-tighter">$48M+</p>
+                                <p className="text-[10px] text-zinc-600 uppercase font-bold tracking-widest">GMV Procesado</p>
                             </div>
-                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-semibold">
-                                <TrendingUp className="h-4 w-4" /> +34% YoY
+                            <div className="p-6 rounded-2xl bg-zinc-900/40 border border-zinc-800">
+                                <TrendingUp className="h-6 w-6 text-indigo-400 mx-auto mb-2" />
+                                <p className="text-2xl font-bold text-white tracking-tighter">+34%</p>
+                                <p className="text-[10px] text-zinc-600 uppercase font-bold tracking-widest">Growth YoY</p>
                             </div>
                         </div>
-                        <p className="text-xs text-muted-foreground mb-6">Últimos 12 meses</p>
+                    </motion.div>
 
-                        {/* Chart */}
-                        <div className="relative h-52">
-                            {/* Y-axis labels */}
-                            <div className="absolute left-0 top-0 bottom-0 flex flex-col justify-between pr-3 text-[10px] text-muted-foreground">
-                                {["$4M", "$3M", "$2M", "$1M", "$0"].map(l => <span key={l}>{l}</span>)}
+                    <motion.div {...fdUp(1)} className="rounded-3xl border border-zinc-800 bg-zinc-900/60 p-8 shadow-2xl relative overflow-hidden group">
+                         <div className="flex items-center justify-between mb-8 pb-4 border-b border-zinc-800">
+                            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Real-time GMV Pulse</span>
+                            <div className="flex gap-2">
+                                <div className="h-2 w-2 rounded-full bg-indigo-400" />
+                                <div className="h-2 w-2 rounded-full bg-zinc-800" />
                             </div>
-                            {/* Chart area */}
-                            <div className="ml-8 h-full flex items-end justify-between gap-1.5">
-                                {REVENUE_DATA.map((v, i) => (
-                                    <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                                        <motion.div
-                                            initial={{ height: 0 }}
-                                            whileInView={{ height: `${(v / max) * 100}%` }}
-                                            transition={{ delay: 0.3 + i * 0.06, duration: 0.7, ease: "easeOut" }}
-                                            viewport={{ once: true }}
-                                            className="w-full rounded-t-lg relative overflow-hidden"
-                                            style={{
-                                                background: `linear-gradient(to top, hsl(243,75%,45%), hsl(243,75%,65%))`,
-                                                opacity: i === REVENUE_DATA.length - 1 ? 1 : 0.7 + (i / REVENUE_DATA.length) * 0.3
-                                            }}>
-                                            <motion.div
-                                                animate={{ y: ["-100%", "100%"] }}
-                                                transition={{ duration: 2, repeat: Infinity, delay: i * 0.15, ease: "linear" }}
-                                                className="absolute inset-x-0 h-full bg-gradient-to-b from-white/20 to-transparent"
+                         </div>
+                         <div className="relative h-48 flex items-end justify-between gap-1">
+                            {[40, 60, 45, 80, 55, 90, 70, 85, 100].map((h, i) => (
+                                <motion.div 
+                                    key={i}
+                                    initial={{ height: 0 }}
+                                    whileInView={{ height: `${h}%` }}
+                                    transition={{ duration: 1.2, delay: i * 0.1 }}
+                                    className="flex-1 bg-gradient-to-t from-indigo-500/10 to-indigo-400/80 rounded-t-sm relative group-hover:to-indigo-300 transition-colors"
+                                />
+                            ))}
+                         </div>
+                         <div className="mt-8 flex justify-between">
+                             <div>
+                                <p className="text-[10px] text-zinc-600 uppercase font-bold tracking-widest">Current Session</p>
+                                <p className="text-xl font-bold text-white">$4.2M</p>
+                             </div>
+                             <div className="text-right">
+                                <p className="text-[10px] text-zinc-600 uppercase font-bold tracking-widest">Projection</p>
+                                <p className="text-xl font-bold text-indigo-400">$5.8M</p>
+                             </div>
+                         </div>
+                    </motion.div>
+                </div>
+            </div>
+
+            {/* ── Section B: Conversion Funnels ── */}
+            <div className="relative py-32 px-6 border-t border-zinc-900 bg-zinc-900/10">
+                <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-24 items-center relative z-10">
+                    <motion.div {...fdUp(1)} className="order-last lg:order-first">
+                         <div className="p-8 rounded-3xl border border-zinc-800 bg-zinc-950 shadow-2xl">
+                             <div className="flex items-center gap-3 mb-8">
+                                <Target className="h-5 w-5 text-indigo-400" />
+                                <p className="text-sm font-bold text-white tracking-tight">Conversion Funnel Analyzer</p>
+                             </div>
+                             <div className="space-y-6">
+                                {[
+                                    { label: "Visits", val: "100%", w: "100%" },
+                                    { label: "Prod. View", val: "64%", w: "64%" },
+                                    { label: "Add to Cart", val: "12%", w: "12%" },
+                                    { label: "Checkout", val: "4.8%", w: "4.8%" },
+                                ].map((s, i) => (
+                                    <div key={i} className="space-y-2">
+                                        <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-zinc-500">
+                                            <span>{s.label}</span>
+                                            <span>{s.val}</span>
+                                        </div>
+                                        <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden">
+                                            <motion.div 
+                                                initial={{ width: 0 }}
+                                                whileInView={{ width: s.w }}
+                                                transition={{ duration: 1, delay: i * 0.2 }}
+                                                className="h-full bg-indigo-500/60"
                                             />
-                                        </motion.div>
-                                        <p className="text-[9px] text-muted-foreground">{MONTHS[i]}</p>
+                                        </div>
                                     </div>
                                 ))}
-                            </div>
+                             </div>
+                         </div>
+                    </motion.div>
+
+                    <motion.div {...fdUp(0)}>
+                        <h3 className="text-4xl md:text-5xl font-bold tracking-tighter text-white mb-6">
+                            Embudos de <span className="text-indigo-400">Conversión.</span>
+                        </h3>
+                        <p className="text-lg text-zinc-400 leading-relaxed font-light mb-8">
+                            Visualiza cada etapa del viaje del cliente. Identifica drop-offs críticos y optimiza la experiencia de compra basándote en el comportamiento real de tus usuarios.
+                        </p>
+                        <div className="grid grid-cols-2 gap-6">
+                            {[
+                                { title: "Heatmaps", desc: "Zonas de calor por dispositivo." },
+                                { title: "A/B Testing", desc: "Valida cambios con datos reales." }
+                            ].map((f, i) => (
+                                <div key={i} className="space-y-2">
+                                    <p className="text-sm font-bold text-white tracking-tight">{f.title}</p>
+                                    <p className="text-xs text-zinc-600 leading-relaxed">{f.desc}</p>
+                                </div>
+                            ))}
                         </div>
                     </motion.div>
                 </div>
             </div>
 
-            {/* ── Section B: KPI cards & Top Products ── */}
-            <div className="py-24 px-6 border-t border-white/5 bg-muted/5">
-                <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-8">
-                    {/* Funnel */}
-                    <motion.div {...fdUp(0)} className="rounded-2xl border border-white/8 bg-card/60 backdrop-blur-xl p-6">
-                        <p className="font-semibold mb-1">Funnel de Conversión</p>
-                        <p className="text-xs text-muted-foreground mb-6">Últimos 30 días</p>
-                        {[
-                            { label: "Visitantes únicos", val: 48200, pct: 100, color: "bg-indigo-500" },
-                            { label: "Vieron un producto", val: 28940, pct: 60, color: "bg-blue-500" },
-                            { label: "Agregaron al carrito", val: 8210, pct: 17, color: "bg-cyan-500" },
-                            { label: "Iniciaron checkout", val: 4100, pct: 8.5, color: "bg-teal-500" },
-                            { label: "Compraron", val: 1830, pct: 3.8, color: "bg-emerald-500" },
-                        ].map((f, i) => (
-                            <div key={f.label} className="mb-3">
-                                <div className="flex items-center justify-between mb-1">
-                                    <span className="text-xs text-muted-foreground">{f.label}</span>
-                                    <span className="text-xs font-semibold">{f.val.toLocaleString("es-CL")}</span>
-                                </div>
-                                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                                    <motion.div
-                                        initial={{ width: 0 }}
-                                        whileInView={{ width: `${f.pct}%` }}
-                                        transition={{ delay: 0.2 + i * 0.1, duration: 0.8 }}
-                                        viewport={{ once: true }}
-                                        className={`h-full rounded-full ${f.color}`}
-                                    />
-                                </div>
-                                <p className="text-right text-[10px] text-muted-foreground mt-0.5">{f.pct}%</p>
+            {/* ── Section C: Forecasting & Projections ── */}
+            <div className="relative py-32 px-6">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-20">
+                    <motion.div {...fdUp(0)} className="md:w-1/2">
+                        <h3 className="text-4xl md:text-5xl font-bold tracking-tighter text-white mb-6">Predicciones <span className="text-indigo-400">Predictivas.</span></h3>
+                        <p className="text-lg text-zinc-400 font-light leading-relaxed mb-8">
+                            Nuestra IA de datos proyecta tus ventas mensuales y sugiere stock basado en estacionalidad. Convierte la incertidumbre en estrategia ejecutable.
+                        </p>
+                        <div className="flex gap-4">
+                            <div className="p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/10 flex-1">
+                                <p className="text-2xl font-bold text-white tracking-tighter">94%</p>
+                                <p className="text-[10px] text-zinc-600 uppercase font-bold tracking-widest mt-1">Accuracy Rate</p>
                             </div>
-                        ))}
+                            <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800 flex-1 text-center">
+                                <PieChart className="h-6 w-6 text-indigo-400 mx-auto" />
+                            </div>
+                        </div>
                     </motion.div>
 
-                    {/* Top products */}
-                    <motion.div {...fdUp(1)} className="rounded-2xl border border-white/8 bg-card/60 backdrop-blur-xl p-6">
-                        <p className="font-semibold mb-1">Top Productos por Revenue</p>
-                        <p className="text-xs text-muted-foreground mb-6">Últimos 30 días</p>
-                        <div className="space-y-4">
-                            {TOP_PRODUCTS.map((p, i) => (
-                                <div key={p.name}>
-                                    <div className="flex items-center justify-between mb-1.5">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs text-muted-foreground font-mono w-4">{i + 1}</span>
-                                            <span className="text-sm">{p.name}</span>
+                    <motion.div {...fdUp(1)} className="md:w-1/2 relative">
+                        <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-8 shadow-2xl relative">
+                            <div className="absolute top-0 right-0 p-8 pointer-events-none opacity-20">
+                                <TrendingUp className="h-32 w-32 text-indigo-500" />
+                            </div>
+                            <div className="relative z-10">
+                                <p className="text-[10px] text-zinc-600 uppercase font-bold tracking-widest mb-2">Growth Forecast Q4</p>
+                                <p className="text-3xl font-bold text-white tracking-tighter mb-8">$12.4M Estimated</p>
+                                <div className="space-y-4">
+                                    {[
+                                        { label: "Optimistic Case", val: "+42%", color: "text-emerald-400" },
+                                        { label: "Baseline Case", val: "+28%", color: "text-indigo-400" },
+                                        { label: "Conservative Case", val: "+14%", color: "text-amber-400" },
+                                    ].map((c, i) => (
+                                        <div key={i} className="flex justify-between items-center p-3 rounded-lg bg-zinc-900/40 border border-zinc-800">
+                                            <span className="text-xs text-zinc-400">{c.label}</span>
+                                            <span className={`text-sm font-bold ${c.color}`}>{c.val}</span>
                                         </div>
-                                        <span className={`text-xs font-semibold ${p.change.startsWith("+") ? "text-emerald-400" : "text-red-400"}`}>
-                                            {p.change}
-                                        </span>
-                                    </div>
-                                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                                        <motion.div
-                                            initial={{ width: 0 }}
-                                            whileInView={{ width: `${p.revenue}%` }}
-                                            transition={{ delay: 0.2 + i * 0.1, duration: 0.8 }}
-                                            viewport={{ once: true }}
-                                            className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-cyan-500"
-                                        />
-                                    </div>
+                                    ))}
                                 </div>
-                            ))}
+                            </div>
                         </div>
                     </motion.div>
                 </div>

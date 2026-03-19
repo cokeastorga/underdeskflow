@@ -1,187 +1,175 @@
 "use client";
 import { motion } from "framer-motion";
-import { LayoutGrid, ChevronRight, SlidersHorizontal, Folder } from "lucide-react";
-
-const CATEGORIES = [
-    { name: "Ropa Mujer", count: 142, children: ["Vestidos", "Blusas", "Pantalones"] },
-    { name: "Ropa Hombre", count: 98, children: ["Poleras", "Jeans", "Chaquetas"] },
-    { name: "Accesorios", count: 64, children: ["Bolsos", "Gafas", "Joyería"] },
-    { name: "Calzado", count: 51, children: ["Zapatillas", "Botas", "Sandalias"] },
-];
-
-const FILTERS = [
-    { label: "Precio", type: "range", values: ["$0", "$100K"], active: true },
-    { label: "Talla", type: "multi", values: ["XS", "S", "M", "L", "XL"], active: false },
-    { label: "Color", type: "color", values: ["#1e293b", "#7f1d1d", "#14532d", "#4c1d95"], active: false },
-    { label: "Disponibilidad", type: "bool", values: ["Solo en stock"], active: true },
-];
+import { Layers, ChevronRight, Check, Filter, Search } from "lucide-react";
 
 const fdUp = (i = 0) => ({
-    initial: { opacity: 0, y: 28 },
+    initial: { opacity: 0, y: 32 },
     whileInView: { opacity: 1, y: 0 },
-    transition: { delay: i * 0.08, duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number] },
+    transition: { delay: i * 0.1, duration: 0.65, ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number] },
     viewport: { once: true },
 });
 
 export default function CategoriesSection() {
     return (
         <section id="categorias" className="relative overflow-hidden">
-
-            {/* ── Section A: Category tree ── */}
-            <div className="relative min-h-screen flex items-center py-28 px-6 bg-gradient-to-br from-teal-950/10 via-background to-background">
-                <div className="absolute inset-0 pointer-events-none">
-                    <div className="absolute bottom-1/4 left-0 w-[500px] h-[400px] bg-teal-500/5 rounded-full blur-[140px]" />
-                </div>
-
-                <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center relative z-10">
-                    <div>
-                        <motion.div {...fdUp(0)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-teal-500/10 border border-teal-500/20 text-teal-400 text-xs font-semibold uppercase tracking-widest mb-6">
-                            <LayoutGrid className="h-3.5 w-3.5" /> Módulo 9 · Categorías
-                        </motion.div>
-                        <motion.h2 {...fdUp(1)} className="text-5xl md:text-6xl font-bold tracking-tight font-serif leading-tight mb-6">
-                            Organiza tu<br />
-                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-teal-400 to-cyan-400">catálogo.</span>
-                        </motion.h2>
-                        <motion.p {...fdUp(2)} className="text-xl text-muted-foreground leading-relaxed mb-8">
-                            Árbol de categorías ilimitado, filtros avanzados por atributos y colecciones automáticas basadas en reglas.
-                        </motion.p>
-                        <motion.div {...fdUp(3)} className="flex flex-wrap gap-3">
-                            {["Categorías anidadas", "Colecciones automáticas", "Ordenamiento custom", "Filtros por atributo", "SEO por categoría"].map(f => (
-                                <span key={f} className="px-3 py-1.5 rounded-xl bg-teal-500/8 border border-teal-500/20 text-teal-400 text-xs font-medium">{f}</span>
-                            ))}
-                        </motion.div>
-                    </div>
-
-                    {/* Category tree mock */}
-                    <motion.div {...fdUp(1)} className="rounded-3xl border border-white/8 bg-card/70 backdrop-blur-xl shadow-2xl overflow-hidden">
-                        <div className="flex items-center gap-3 p-5 border-b border-white/6">
-                            <Folder className="h-4 w-4 text-teal-400" />
-                            <span className="font-semibold text-sm">Árbol de Categorías</span>
-                            <button className="ml-auto text-xs text-teal-400 font-medium">+ Nueva</button>
+            {/* ── Section A: Infinite Catalog Hierarchy ── */}
+            <div className="relative min-h-screen flex items-center py-32 px-6">
+                <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-24 items-center relative z-10">
+                    <motion.div {...fdUp(0)}>
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-400 text-[10px] font-bold uppercase tracking-widest mb-6">
+                            <Layers className="h-3 w-3" /> Arquitectura de Datos
                         </div>
-                        <div className="p-4 space-y-1">
-                            {CATEGORIES.map((cat, i) => (
-                                <div key={cat.name}>
-                                    <motion.div
-                                        initial={{ opacity: 0, x: -10 }}
-                                        whileInView={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: 0.1 + i * 0.1 }}
-                                        viewport={{ once: true }}
-                                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/4 cursor-pointer group">
-                                        <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-teal-400 transition-colors" />
-                                        <LayoutGrid className="h-4 w-4 text-teal-400/60" />
-                                        <span className="text-sm font-medium flex-1">{cat.name}</span>
-                                        <span className="text-xs text-muted-foreground">{cat.count} productos</span>
-                                    </motion.div>
-                                    <div className="ml-10 space-y-0.5">
-                                        {cat.children.map((child, j) => (
-                                            <motion.div
-                                                initial={{ opacity: 0, x: -5 }}
-                                                whileInView={{ opacity: 1, x: 0 }}
-                                                transition={{ delay: 0.2 + i * 0.1 + j * 0.06 }}
-                                                viewport={{ once: true }}
-                                                key={child}
-                                                className="flex items-center gap-3 px-3 py-1.5 rounded-xl hover:bg-white/3 cursor-pointer">
-                                                <div className="h-px w-3 bg-border" />
-                                                <span className="text-xs text-muted-foreground hover:text-foreground transition-colors">{child}</span>
-                                            </motion.div>
-                                        ))}
+                        <h2 className="text-5xl md:text-7xl font-bold tracking-tighter text-white mb-8 leading-[0.9]">
+                            Catálogos sin <span className="text-violet-400">Escalas.</span>
+                        </h2>
+                        <p className="text-xl text-zinc-400 leading-relaxed mb-10 font-light">
+                            Organiza miles de productos con una estructura jerárquica infinita. Categorías, sub-categorías y etiquetas inteligentes para una navegación fluida.
+                        </p>
+                        <div className="space-y-4">
+                            {[
+                                { title: "Niveles Ilimitados", desc: "Crea taxonomías profundas para inventarios complejos." },
+                                { title: "SEO Semántico", desc: "URLs amigables auto-generadas para cada nodo del catálogo." }
+                            ].map((f, i) => (
+                                <div key={i} className="flex gap-4 p-4 rounded-xl bg-zinc-900/40 border border-zinc-800">
+                                    <div className="h-6 w-6 rounded-full bg-violet-500/10 border border-violet-500/20 flex items-center justify-center flex-shrink-0">
+                                        <Check className="h-3 w-3 text-violet-400" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold text-white tracking-tight">{f.title}</p>
+                                        <p className="text-xs text-zinc-500 mt-1">{f.desc}</p>
                                     </div>
                                 </div>
                             ))}
                         </div>
-                        <div className="p-4 border-t border-white/6 flex items-center justify-between">
-                            <span className="text-xs text-muted-foreground">4 categorías · 355 productos</span>
-                            <button className="text-xs text-teal-400 font-medium hover:underline">Reordenar</button>
+                    </motion.div>
+
+                    <motion.div {...fdUp(1)} className="rounded-3xl border border-zinc-800 bg-zinc-900/60 p-8 shadow-2xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-8 opacity-20">
+                            <Layers className="h-32 w-32 text-violet-500" />
+                        </div>
+                        <div className="relative z-10 space-y-3">
+                            {[
+                                { name: "ELECTRÓNICA", level: 0 },
+                                { name: "SMARTPHONES", level: 1 },
+                                { name: "ACCESORIOS", level: 2 },
+                                { name: "CABLES & CARGA", level: 3 },
+                                { name: "DEPORTES", level: 0 },
+                                { name: "CALZADO", level: 1 },
+                            ].map((c, i) => (
+                                <motion.div 
+                                    key={i}
+                                    initial={{ x: -20, opacity: 0 }}
+                                    whileInView={{ x: 0, opacity: 1 }}
+                                    transition={{ delay: i * 0.1 }}
+                                    className="flex items-center gap-3"
+                                    style={{ marginLeft: `${c.level * 24}px` }}
+                                >
+                                    <div className="h-8 px-4 rounded-lg bg-zinc-950 border border-zinc-800 flex items-center justify-between group cursor-pointer hover:border-violet-500/50 transition-colors flex-1 max-w-[280px]">
+                                        <span className={`text-[10px] font-bold tracking-widest ${c.level === 0 ? "text-violet-400" : "text-zinc-500"}`}>{c.name}</span>
+                                        <ChevronRight className="h-3 w-3 text-zinc-700" />
+                                    </div>
+                                </motion.div>
+                            ))}
                         </div>
                     </motion.div>
                 </div>
             </div>
 
-            {/* ── Section B: Filter builder ── */}
-            <div className="py-24 px-6 border-t border-white/5 bg-muted/5">
-                <div className="max-w-5xl mx-auto">
-                    <motion.div {...fdUp(0)} className="text-center mb-12">
-                        <p className="text-xs font-semibold tracking-widest text-teal-400 uppercase mb-3">Filtros Avanzados</p>
-                        <h3 className="text-4xl font-bold font-serif">Tus clientes encuentran lo que buscan</h3>
+            {/* ── Section B: Smart collections ── */}
+            <div className="relative py-32 px-6 border-t border-zinc-900 bg-zinc-900/10">
+                <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-24 items-center relative z-10">
+                    <motion.div {...fdUp(1)} className="order-last lg:order-first">
+                        <div className="rounded-3xl border border-zinc-800 bg-zinc-900/60 p-8 shadow-2xl">
+                             <div className="flex items-center gap-3 mb-8">
+                                <div className="h-10 w-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                                    <Filter className="h-5 w-5 text-emerald-400" />
+                                </div>
+                                <p className="text-sm font-bold text-white tracking-tight">Regla de Colección Inteligente</p>
+                             </div>
+                             <div className="space-y-4">
+                                <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-between">
+                                    <span className="text-xs text-zinc-400">Si el stock es mayor que:</span>
+                                    <span className="text-xs font-mono text-emerald-400">10 unidades</span>
+                                </div>
+                                <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-between">
+                                    <span className="text-xs text-zinc-400">Y el tag incluye:</span>
+                                    <span className="text-xs font-mono text-emerald-400">"Oferta_Verano"</span>
+                                </div>
+                                <div className="pt-4 border-t border-zinc-800 text-center">
+                                    <p className="text-[10px] text-zinc-600 uppercase font-bold tracking-widest mb-3">Resultado Dinámico</p>
+                                    <div className="flex justify-center -space-x-3">
+                                        {[1, 2, 3, 4].map(i => (
+                                            <div key={i} className="h-10 w-10 rounded-full border-2 border-zinc-900 bg-zinc-800" />
+                                        ))}
+                                        <div className="h-10 w-10 rounded-full border-2 border-zinc-900 bg-emerald-500/20 flex items-center justify-center text-[10px] font-bold text-emerald-400">+12</div>
+                                    </div>
+                                </div>
+                             </div>
+                        </div>
                     </motion.div>
-                    <div className="grid md:grid-cols-2 gap-6">
-                        <motion.div {...fdUp(0)} className="rounded-2xl border border-white/8 bg-card/60 backdrop-blur-xl p-6">
-                            <div className="flex items-center gap-2 mb-5">
-                                <SlidersHorizontal className="h-4 w-4 text-teal-400" />
-                                <p className="font-semibold text-sm">Opciones de filtro</p>
+
+                    <motion.div {...fdUp(0)}>
+                        <h3 className="text-4xl md:text-5xl font-bold tracking-tighter text-white mb-6">
+                            Colecciones <span className="text-violet-400">Inteligentes.</span>
+                        </h3>
+                        <p className="text-lg text-zinc-400 leading-relaxed font-light mb-8">
+                            Ahorra horas de trabajo manual. Crea reglas automáticas que agrupan productos por precio, stock, tags o proveedores.
+                        </p>
+                        <div className="grid grid-cols-2 gap-4">
+                            {["Auto-Tagging", "Reglas Booleanas", "Actualización Real-time", "Sort Inteligente"].map(f => (
+                                <div key={f} className="flex items-center gap-2">
+                                    <div className="h-2 w-2 rounded-full bg-violet-500" />
+                                    <span className="text-xs font-bold text-zinc-500 tracking-wider uppercase">{f}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </motion.div>
+                </div>
+            </div>
+
+            {/* ── Section C: Navigation & UX ── */}
+            <div className="relative py-32 px-6">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-16">
+                    <motion.div {...fdUp(0)} className="md:w-1/2">
+                        <h3 className="text-4xl md:text-5xl font-bold tracking-tighter text-white mb-6">Navegación <span className="text-violet-400">Premium.</span></h3>
+                        <p className="text-lg text-zinc-400 font-light leading-relaxed mb-8">
+                            Una buena arquitectura de categorías no sirve sin una buena interfaz. Nuestro sistema genera menús, migas de pan y filtros de búsqueda optimizados para conversión.
+                        </p>
+                        <div className="flex gap-6 items-center border-t border-zinc-800 pt-8">
+                            <div className="text-center">
+                                <p className="text-3xl font-bold text-white tracking-tighter">98%</p>
+                                <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest mt-1">UX Score</p>
                             </div>
-                            <div className="space-y-4">
-                                {FILTERS.map((f, i) => (
-                                    <motion.div
-                                        initial={{ opacity: 0 }}
-                                        whileInView={{ opacity: 1 }}
-                                        transition={{ delay: 0.15 + i * 0.1 }}
-                                        viewport={{ once: true }}
-                                        key={f.label} className="flex items-center justify-between p-3 rounded-xl bg-white/3 border border-white/6">
-                                        <div>
-                                            <p className="text-sm font-medium">{f.label}</p>
-                                            <p className="text-xs text-muted-foreground mt-0.5">
-                                                {f.type === "range" ? `${f.values[0]} — ${f.values[1]}` :
-                                                    f.type === "multi" ? f.values.join(", ") :
-                                                        f.type === "color" ? "Selector de color" :
-                                                            f.values[0]}
-                                            </p>
-                                        </div>
-                                        <motion.div
-                                            whileTap={{ scale: 0.9 }}
-                                            className={`h-6 w-11 rounded-full border-2 flex items-center px-0.5 transition-all duration-300 cursor-pointer ${f.active ? "bg-teal-500 border-teal-500" : "bg-muted border-muted-foreground/30"}`}>
-                                            <motion.div
-                                                animate={{ x: f.active ? 20 : 0 }}
-                                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                                                className="h-4 w-4 bg-white rounded-full shadow-sm"
-                                            />
-                                        </motion.div>
-                                    </motion.div>
-                                ))}
+                            <div className="text-center">
+                                <p className="text-3xl font-bold text-white tracking-tighter">-15%</p>
+                                <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest mt-1">Bounce Rate</p>
                             </div>
-                        </motion.div>
-                        {/* Filter preview */}
-                        <motion.div {...fdUp(1)} className="rounded-2xl border border-white/8 bg-card/60 backdrop-blur-xl p-6">
-                            <p className="font-semibold text-sm mb-5">Vista previa filtros en tienda</p>
-                            <div className="space-y-4">
+                        </div>
+                    </motion.div>
+
+                    <motion.div {...fdUp(1)} className="md:w-1/2">
+                         <div className="rounded-3xl border border-zinc-800 p-8 bg-zinc-950 shadow-2xl relative">
+                            <div className="flex items-center gap-8 mb-6 border-b border-zinc-900 pb-4">
+                                <span className="text-xs font-bold text-white">HOME</span>
+                                <span className="text-xs font-bold text-violet-400 border-b border-violet-400 pb-4 -mb-4">CATEGORÍAS</span>
+                                <span className="text-xs font-bold text-zinc-600">OFERTAS</span>
+                                <span className="text-xs font-bold text-zinc-600">AYUDA</span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-8 py-4">
                                 <div>
-                                    <p className="text-xs font-medium text-muted-foreground mb-2">Precio</p>
-                                    <div className="relative h-2 bg-muted rounded-full">
-                                        <motion.div
-                                            initial={{ width: 0 }}
-                                            whileInView={{ width: "70%" }}
-                                            transition={{ delay: 0.5, duration: 0.8 }}
-                                            viewport={{ once: true }}
-                                            className="absolute left-0 h-full bg-teal-500 rounded-full"
-                                        />
-                                        <div className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-4 bg-white rounded-full border-2 border-teal-500 shadow-md" />
-                                        <div className="absolute left-[70%] top-1/2 -translate-y-1/2 h-4 w-4 bg-white rounded-full border-2 border-teal-500 shadow-md" />
-                                    </div>
-                                    <div className="flex justify-between mt-1 text-[10px] text-muted-foreground">
-                                        <span>$0</span><span>$70.000</span>
+                                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-4">Destacados</p>
+                                    <div className="space-y-3">
+                                        <div className="h-3 w-full bg-zinc-900 rounded" />
+                                        <div className="h-3 w-[80%] bg-zinc-900 rounded" />
+                                        <div className="h-3 w-[60%] bg-zinc-900 rounded" />
                                     </div>
                                 </div>
-                                <div>
-                                    <p className="text-xs font-medium text-muted-foreground mb-2">Disponibilidad</p>
-                                    <div className="flex items-center gap-2">
-                                        <div className="h-4 w-4 rounded border-2 border-teal-500 bg-teal-500 flex items-center justify-center">
-                                            <div className="h-2 w-2 bg-white rounded-sm" />
-                                        </div>
-                                        <span className="text-sm">Solo con stock</span>
-                                    </div>
-                                </div>
-                                <div className="pt-3 border-t border-white/6">
-                                    <p className="text-xs text-muted-foreground mb-2">Resultados</p>
-                                    <div className="flex items-center justify-between">
-                                        <motion.p animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 2, repeat: Infinity }}
-                                            className="font-bold text-teal-400 text-lg">84 productos</motion.p>
-                                        <button className="text-xs text-muted-foreground underline">Limpiar filtros</button>
-                                    </div>
+                                <div className="aspect-video bg-zinc-900 rounded-xl border border-zinc-800 flex items-center justify-center">
+                                    <Search className="h-6 w-6 text-zinc-800" />
                                 </div>
                             </div>
-                        </motion.div>
-                    </div>
+                         </div>
+                    </motion.div>
                 </div>
             </div>
         </section>

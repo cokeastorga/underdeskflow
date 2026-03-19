@@ -1,17 +1,6 @@
 "use client";
 import { motion } from "framer-motion";
-import { Palette, Monitor, Moon, Sun } from "lucide-react";
-import { useState } from "react";
-
-const PALETTES = [
-    { name: "Ocean", colors: ["#0f172a", "#1e3a5f", "#3b82f6", "#e0f2fe"] },
-    { name: "Forest", colors: ["#052e16", "#14532d", "#22c55e", "#f0fdf4"] },
-    { name: "Rose", colors: ["#2d0a0a", "#450a0a", "#ef4444", "#fff1f2"] },
-    { name: "Amber", colors: ["#1c1007", "#431407", "#f59e0b", "#fffbeb"] },
-    { name: "Violet", colors: ["#2e1065", "#4c1d95", "#8b5cf6", "#f5f3ff"] },
-];
-
-const FONTS = ["Inter", "Playfair Display", "Space Grotesk", "Poppins", "Montserrat"];
+import { Zap, Palette, CheckCircle2 } from "lucide-react";
 
 const fdUp = (i = 0) => ({
     initial: { opacity: 0, y: 32 },
@@ -21,195 +10,162 @@ const fdUp = (i = 0) => ({
 });
 
 export default function DesignSection() {
-    const [selectedPalette, setSelectedPalette] = useState(0);
-    const [isDark, setIsDark] = useState(true);
-
-    const palette = PALETTES[selectedPalette];
-
     return (
         <section id="diseno" className="relative overflow-hidden">
-
-            {/* ── Section A: Theme editor ── */}
-            <div className="relative min-h-screen flex items-center py-28 px-6 bg-gradient-to-bl from-violet-950/15 via-background to-background">
-                <div className="absolute inset-0 pointer-events-none">
-                    <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-violet-500/5 rounded-full blur-[140px]" />
-                    <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-pink-500/5 rounded-full blur-[120px]" />
-                    {/* Decorative mesh grid */}
-                    <div className="absolute inset-0 opacity-[0.03]"
-                        style={{
-                            backgroundImage: "linear-gradient(rgba(139,92,246,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(139,92,246,0.8) 1px, transparent 1px)",
-                            backgroundSize: "40px 40px"
-                        }} />
-                </div>
-
-                <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center relative z-10">
-                    {/* Design editor mock */}
-                    <motion.div {...fdUp(0)} className="rounded-3xl border border-white/8 bg-card/70 backdrop-blur-xl shadow-2xl overflow-hidden order-2 lg:order-1">
-                        <div className="flex items-center justify-between p-5 border-b border-white/6">
-                            <div className="flex items-center gap-2">
-                                <Palette className="h-4 w-4 text-violet-400" />
-                                <span className="font-semibold text-sm">Editor de Diseño</span>
-                            </div>
-                            <button onClick={() => setIsDark(d => !d)}
-                                className="h-7 w-7 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors">
-                                {isDark ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
-                            </button>
+            {/* ── Section A: High-Performance Rendering Engine ── */}
+            <div className="relative min-h-screen flex items-center py-32 px-6 bg-zinc-950">
+                <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-24 items-center relative z-10">
+                    <motion.div {...fdUp(0)}>
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-bold uppercase tracking-widest mb-6">
+                            <Zap className="h-3 w-3" /> Core Engine
                         </div>
-
-                        <div className="flex">
-                            {/* Sidebar controls */}
-                            <div className="w-52 border-r border-white/6 p-4 space-y-5">
-                                <div>
-                                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Paleta</p>
-                                    <div className="space-y-2">
-                                        {PALETTES.map((p, i) => (
-                                            <button key={p.name} onClick={() => setSelectedPalette(i)}
-                                                className={`w-full flex items-center gap-3 p-2 rounded-xl transition-all ${selectedPalette === i ? "bg-violet-500/15 border border-violet-500/30" : "hover:bg-muted/50"}`}>
-                                                <div className="flex gap-1">
-                                                    {p.colors.map((c, j) => (
-                                                        <div key={j} className="h-4 w-4 rounded-full border border-white/10" style={{ backgroundColor: c }} />
-                                                    ))}
-                                                </div>
-                                                <span className="text-xs text-muted-foreground">{p.name}</span>
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                                <div>
-                                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Tipografía</p>
-                                    <div className="space-y-1.5">
-                                        {FONTS.map((f, i) => (
-                                            <button key={f}
-                                                className={`w-full text-left px-3 py-1.5 rounded-lg text-xs transition-colors ${i === 0 ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
-                                                {f}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
+                        <h2 className="text-5xl md:text-7xl font-bold tracking-tighter text-white mb-8 leading-[0.9]">
+                            Velocidad que <span className="text-blue-400">Vende.</span>
+                        </h2>
+                        <p className="text-xl text-zinc-400 leading-relaxed mb-10 font-light">
+                            Nuestro motor de renderizado Quartz utiliza Zero-Runtime CSS y optimización automática de imágenes para entregar experiencias instantáneas en cualquier dispositivo.
+                        </p>
+                        <div className="flex items-center gap-8 border-t border-zinc-800 pt-8">
+                            <div>
+                                <p className="text-3xl font-bold text-white tracking-tighter">0.8s</p>
+                                <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest mt-1">LCP promedio</p>
                             </div>
-
-                            {/* Live preview */}
-                            <div className="flex-1 p-3">
-                                <motion.div
-                                    animate={{ backgroundColor: palette.colors[0] }}
-                                    transition={{ duration: 0.6 }}
-                                    className="rounded-xl h-full min-h-[280px] overflow-hidden relative">
-                                    {/* Preview store header */}
-                                    <div className="flex items-center justify-between px-4 py-3"
-                                        style={{ borderBottom: `1px solid ${palette.colors[1]}40` }}>
-                                        <motion.span animate={{ color: palette.colors[3] }} transition={{ duration: 0.6 }}
-                                            className="font-bold text-sm">Mi Tienda</motion.span>
-                                        <div className="flex gap-3 text-[10px]" style={{ color: palette.colors[3] + "80" }}>
-                                            <span>Inicio</span><span>Catálogo</span><span>Contacto</span>
-                                        </div>
-                                    </div>
-                                    {/* Preview hero */}
-                                    <motion.div
-                                        animate={{ backgroundColor: palette.colors[1] }}
-                                        transition={{ duration: 0.6 }}
-                                        className="h-24 flex items-center px-5">
-                                        <div>
-                                            <motion.div animate={{ backgroundColor: palette.colors[2] }} transition={{ duration: 0.6 }}
-                                                className="h-2 w-20 rounded-full mb-2" />
-                                            <motion.div animate={{ backgroundColor: palette.colors[3] }} transition={{ duration: 0.6 }}
-                                                className="h-3 w-32 rounded-full mb-3" />
-                                            <motion.div animate={{ backgroundColor: palette.colors[2] }} transition={{ duration: 0.6 }}
-                                                className="h-6 w-20 rounded-lg" />
-                                        </div>
-                                    </motion.div>
-                                    {/* Preview products */}
-                                    <div className="grid grid-cols-3 gap-2 p-3">
-                                        {[0, 1, 2].map(i => (
-                                            <motion.div key={i}
-                                                animate={{ borderColor: palette.colors[1] + "60" }}
-                                                transition={{ duration: 0.6 }}
-                                                className="rounded-lg border overflow-hidden">
-                                                <motion.div animate={{ backgroundColor: palette.colors[1] }} transition={{ duration: 0.6 }}
-                                                    className="h-16" />
-                                                <div className="p-1.5" style={{ backgroundColor: palette.colors[0] }}>
-                                                    <motion.div animate={{ backgroundColor: palette.colors[3] + "80" }} transition={{ duration: 0.6 }}
-                                                        className="h-1.5 w-3/4 rounded-full mb-1" />
-                                                    <motion.div animate={{ backgroundColor: palette.colors[2] }} transition={{ duration: 0.6 }}
-                                                        className="h-1.5 w-1/2 rounded-full" />
-                                                </div>
-                                            </motion.div>
-                                        ))}
-                                    </div>
-                                </motion.div>
+                            <div className="h-10 w-px bg-zinc-800" />
+                            <div>
+                                <p className="text-3xl font-bold text-white tracking-tighter">100/100</p>
+                                <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest mt-1">Lighthouse Score</p>
                             </div>
                         </div>
                     </motion.div>
 
-                    <div className="order-1 lg:order-2">
-                        <motion.div {...fdUp(0)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-400 text-xs font-semibold uppercase tracking-widest mb-6">
-                            <Palette className="h-3.5 w-3.5" /> Módulo 2
-                        </motion.div>
-                        <motion.h2 {...fdUp(1)} className="text-5xl md:text-6xl font-bold tracking-tight font-serif leading-tight mb-6">
-                            Diseño que<br />
-                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-violet-400 via-pink-400 to-rose-400">enamora.</span>
-                        </motion.h2>
-                        <motion.p {...fdUp(2)} className="text-xl text-muted-foreground leading-relaxed mb-8">
-                            Editor visual en tiempo real. Cambia colores, fuentes y layouts con un clic — sin tocar código. Ve los cambios al instante.
-                        </motion.p>
-                        <motion.div {...fdUp(3)} className="grid grid-cols-2 gap-4">
-                            {[
-                                { icon: Palette, label: "Paletas predefinidas", value: "50+" },
-                                { icon: Monitor, label: "Layouts de tienda", value: "12" },
-                            ].map(item => (
-                                <div key={item.label} className="p-5 rounded-2xl bg-violet-500/5 border border-violet-500/15 text-center">
-                                    <item.icon className="h-6 w-6 text-violet-400 mx-auto mb-2" />
-                                    <p className="text-2xl font-bold">{item.value}</p>
-                                    <p className="text-xs text-muted-foreground mt-1">{item.label}</p>
-                                </div>
-                            ))}
-                        </motion.div>
-                    </div>
+                    <motion.div {...fdUp(1)} className="rounded-3xl border border-zinc-800 bg-zinc-900/40 p-1">
+                        <div className="bg-zinc-950 rounded-[22px] overflow-hidden relative group">
+                            <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent z-10" />
+                            <div className="p-8 border-b border-zinc-900 flex items-center justify-between relative z-20">
+                                <span className="text-xs font-mono text-zinc-500">Performance_Analyzer.log</span>
+                                <div className="h-2 w-2 rounded-full bg-blue-400 animate-pulse" />
+                            </div>
+                            <div className="p-8 space-y-4 font-mono text-[11px] text-blue-400/60 relative z-20">
+                                <p className="text-zinc-400">[info] Initializing Quartz Render Tree...</p>
+                                <p>[success] Images optimized and served via CDN_Edge</p>
+                                <p>[success] Critical CSS extracted in 14ms</p>
+                                <p className="text-zinc-400">[info] Hydrating client components...</p>
+                                <p className="text-white font-bold">[done] Page interactive in 340ms</p>
+                            </div>
+                            {/* Visual speed representation */}
+                            <div className="h-32 relative overflow-hidden bg-zinc-900/20">
+                                <motion.div 
+                                    animate={{ x: ['-100%', '100%'] }}
+                                    transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                                    className="absolute inset-y-0 w-32 bg-gradient-to-r from-transparent via-blue-500/20 to-transparent"
+                                />
+                            </div>
+                        </div>
+                    </motion.div>
                 </div>
             </div>
 
-            {/* ── Section B: Template gallery ── */}
-            <div className="py-24 px-6 border-t border-white/5">
-                <div className="max-w-6xl mx-auto">
-                    <motion.div {...fdUp(0)} className="text-center mb-12">
-                        <p className="text-xs font-semibold tracking-widest text-violet-400 uppercase mb-3">Templates</p>
-                        <h3 className="text-4xl font-bold font-serif">Empieza desde una plantilla premium</h3>
-                    </motion.div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {[
-                            { name: "Minimal", desc: "Limpio y elegante", bg: "from-gray-900 to-gray-800", accent: "#e5e7eb" },
-                            { name: "Luxury", desc: "Premium & sofisticado", bg: "from-yellow-950 to-amber-950", accent: "#fbbf24" },
-                            { name: "Bold", desc: "Vibrante & moderno", bg: "from-indigo-950 to-violet-950", accent: "#818cf8" },
-                        ].map((t, i) => (
-                            <motion.div key={t.name} {...fdUp(i * 0.15)}
-                                whileHover={{ scale: 1.02, y: -4 }}
-                                className="group cursor-pointer rounded-2xl overflow-hidden border border-white/8 shadow-xl">
-                                <div className={`h-48 bg-gradient-to-br ${t.bg} relative overflow-hidden`}>
-                                    {/* Template preview skeleton */}
-                                    <div className="p-4">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <div className="h-3 w-16 rounded-full" style={{ backgroundColor: t.accent + "60" }} />
-                                            <div className="flex gap-2">
-                                                {[1, 2, 3].map(n => <div key={n} className="h-2 w-8 rounded-full" style={{ backgroundColor: t.accent + "40" }} />)}
-                                            </div>
-                                        </div>
-                                        <div className="h-20 rounded-xl mb-3" style={{ backgroundColor: t.accent + "15", border: `1px solid ${t.accent}20` }} />
-                                        <div className="grid grid-cols-3 gap-2">
-                                            {[1, 2, 3].map(n => (
-                                                <div key={n} className="h-16 rounded-lg" style={{ backgroundColor: t.accent + "10", border: `1px solid ${t.accent}15` }} />
+            {/* ── Section B: Visual Theme Builder ── */}
+            <div className="relative py-32 px-6 border-t border-zinc-900">
+                <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-24 items-center">
+                    <motion.div {...fdUp(1)} className="order-last lg:order-first relative">
+                         <div className="absolute -inset-4 bg-violet-500/5 rounded-3xl blur-2xl" />
+                         <div className="relative rounded-3xl border border-zinc-800 bg-zinc-900/60 p-8 shadow-2xl">
+                            <div className="flex gap-4 mb-8">
+                                <div className="h-10 w-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
+                                    <Palette className="h-5 w-5 text-violet-400" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-bold text-white tracking-tight">Personalizador Visual</p>
+                                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-0.5">Editando: Home Page</p>
+                                </div>
+                            </div>
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-800 space-y-3">
+                                        <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Colores Base</p>
+                                        <div className="flex gap-2">
+                                            {['#8B5CF6', '#10B981', '#3B82F6', '#F59E0B'].map(c => (
+                                                <div key={c} className="h-5 w-5 rounded-full border border-white/10" style={{ backgroundColor: c }} />
                                             ))}
                                         </div>
                                     </div>
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4">
-                                        <span className="text-sm font-semibold text-white px-4 py-2 rounded-xl bg-white/20 backdrop-blur-sm">Usar plantilla</span>
+                                    <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-800 space-y-3">
+                                        <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Tipografía</p>
+                                        <p className="text-xs text-white font-bold tracking-tight">OUTFIT BOLD</p>
                                     </div>
                                 </div>
-                                <div className="p-4 bg-card border-t border-white/6">
-                                    <p className="font-semibold">{t.name}</p>
-                                    <p className="text-xs text-muted-foreground">{t.desc}</p>
+                                <div className="p-6 rounded-2xl bg-violet-500/5 border border-violet-500/10 flex items-center justify-between">
+                                    <div>
+                                        <p className="text-xs text-zinc-300">Modo Dark Global</p>
+                                        <p className="text-[10px] text-violet-400 font-bold mt-1">Status: Active</p>
+                                    </div>
+                                    <div className="h-5 w-10 rounded-full bg-violet-500 flex items-center justify-end px-1">
+                                        <div className="h-3 w-3 rounded-full bg-white shadow-sm" />
+                                    </div>
                                 </div>
-                            </motion.div>
-                        ))}
-                    </div>
+                            </div>
+                         </div>
+                    </motion.div>
+
+                    <motion.div {...fdUp(0)}>
+                        <h3 className="text-4xl md:text-5xl font-bold tracking-tighter text-white mb-6">
+                            Control Creativo <span className="text-violet-400">Total.</span>
+                        </h3>
+                        <p className="text-lg text-zinc-400 leading-relaxed font-light mb-8">
+                            Sin código, sin límites. Ajusta cada pixel de tu storefront con nuestro constructor visual. Cambia paletas, fuentes y layouts en tiempo real.
+                        </p>
+                        <div className="space-y-4">
+                            {[
+                                "Librería de componentes pre-diseñados",
+                                "Previsualización responsive instantánea",
+                                "Soporte para fuentes personalizadas",
+                                "Sistema de diseño basado en tokens"
+                            ].map((f, i) => (
+                                <div key={i} className="flex items-center gap-3 text-zinc-500">
+                                    <CheckCircle2 className="h-4 w-4 text-violet-400" />
+                                    <span className="text-sm font-medium">{f}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </motion.div>
+                </div>
+            </div>
+
+            {/* ── Section C: Multi-Theme Architecture ── */}
+            <div className="relative py-32 px-6">
+                <div className="max-w-7xl mx-auto text-center mb-20">
+                    <motion.div {...fdUp(0)}>
+                        <h3 className="text-4xl md:text-5xl font-bold tracking-tighter text-white mb-6">Múltiples Caras, <span className="text-violet-400">Una Infraestructura.</span></h3>
+                        <p className="text-lg text-zinc-400 max-w-3xl mx-auto font-light leading-relaxed">
+                            Cambia el look de tu tienda según la temporada o evento sin afectar la lógica de negocio. Soporta múltiples temas por instancia para una versatilidad absoluta.
+                        </p>
+                    </motion.div>
+                </div>
+
+                <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-3 gap-8 text-center">
+                    {[
+                        { name: "Minimalist", style: "Clean & Sharp" },
+                        { name: "Dark Mode", style: "Vanguard Tech" },
+                        { name: "Modern Retail", style: "Vibrant Bold" }
+                    ].map((t, i) => (
+                        <motion.div 
+                            key={t.name}
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.1 }}
+                            className="p-8 rounded-2xl bg-zinc-900/40 border border-zinc-800 hover:border-violet-500/40 transition-colors group"
+                        >
+                            <div className="h-1 w-full bg-zinc-800 rounded-full mb-6 overflow-hidden">
+                                <motion.div 
+                                    initial={{ x: '-100%' }} whileInView={{ x: '0%' }} transition={{ duration: 1, delay: i * 0.2 }}
+                                    className="h-full bg-violet-400" 
+                                />
+                            </div>
+                            <p className="text-white font-bold tracking-tight mb-2 group-hover:text-violet-400 transition-colors">{t.name}</p>
+                            <p className="text-[10px] text-zinc-600 uppercase font-bold tracking-widest">{t.style}</p>
+                        </motion.div>
+                    ))}
                 </div>
             </div>
         </section>
