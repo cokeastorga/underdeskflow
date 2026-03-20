@@ -116,9 +116,11 @@ export default function HeroSection({ isFirstRun }: { isFirstRun?: boolean }) {
                         </Button>
                     </Link>
                     <Link href="/login">
-                        <Button size="lg" variant="outline"
-                            className="h-16 px-10 text-lg rounded-2xl border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-300 backdrop-blur-sm">
-                            Ver demo en vivo
+                        <Button
+                            size="lg"
+                            className="h-16 px-10 text-lg rounded-2xl bg-white text-black hover:bg-gray-200 transition-all duration-300 shadow-lg hover:shadow-xl"
+                        >
+                            Ver demo en vivo →
                         </Button>
                     </Link>
                 </motion.div>

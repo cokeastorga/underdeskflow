@@ -22,19 +22,19 @@ export default function VerifyEmailPage() {
     }, [user, router]);
 
     const handleResend = async () => {
-        if (!user) return;
+        if (!user || !user.email) return;
         setIsResending(true);
         try {
-            const { sendEmailVerification } = await import("firebase/auth");
-            const actionCodeSettings = {
-                url: `${window.location.origin}/login?verify=success`,
-                handleCodeInApp: true,
-            };
-            await sendEmailVerification(user, actionCodeSettings);
-            toast.success("Correo de verificación re-enviado. Revisa tu spam.");
+            const res = await fetch("/api/auth/resend-verification", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: user.email }),
+            });
+            if (!res.ok) throw new Error("API error");
+            toast.success("Correo de verificación re-enviado vía Resend.");
         } catch (error: any) {
             console.error("Resend error:", error);
-            toast.error("Error al re-enviar el correo.");
+            toast.error("Error al re-enviar el correo. Inténtalo más tarde.");
         } finally {
             setIsResending(false);
         }

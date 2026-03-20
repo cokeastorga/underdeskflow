@@ -71,13 +71,17 @@ export default function RegisterPage() {
 
             const role = (user.email === targetEmail || isFirstUser) ? "platform_admin" : "tenant_admin";
 
-            // Send verification email with ActionCodeSettings for resilience
-            const { sendEmailVerification } = await import("firebase/auth");
-            const actionCodeSettings = {
-                url: `${window.location.origin}/login?verify=success`,
-                handleCodeInApp: true,
-            };
-            await sendEmailVerification(user, actionCodeSettings);
+            // Send verification email via high-deliverability Resend endpoint
+            try {
+                await fetch("/api/auth/resend-verification", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email: user.email }),
+                });
+            } catch (err) {
+                console.error("[Register] Failed to trigger Resend verification:", err);
+                // We don't block registration if email fails, as they can retry on the next screen
+            }
 
             // Create user document with enhanced profile
             await setDoc(doc(db, "users", user.uid), {

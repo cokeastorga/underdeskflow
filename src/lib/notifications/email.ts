@@ -82,3 +82,36 @@ export async function sendTenantNewSaleAlert(order: Partial<Order>, tenantEmail:
         logger.error("Failed to send tenant new sale alert email", { requestId, orderId: order.id, error });
     }
 }
+/**
+ * Sends a high-deliverability account verification email via Resend.
+ */
+export async function sendVerificationEmail(email: string, verificationLink: string, requestId?: string) {
+    try {
+        const emailHtml = `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #18181b;">
+                <h2 style="color: #8b5cf6;">¡Bienvenido a UnderDesk Flow!</h2>
+                <p>Estás a un paso de activar tu infraestructura operativa. Por favor, verifica tu correo electrónico haciendo clic en el botón de abajo:</p>
+                <div style="margin: 30px 0;">
+                    <a href="${verificationLink}" style="background-color: #8b5cf6; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Verificar Mi Cuenta</a>
+                </div>
+                <p style="font-size: 14px; color: #71717a;">Si el botón no funciona, copia y pega este enlace en tu navegador:</p>
+                <p style="font-size: 12px; color: #a1a1aa; word-break: break-all;">${verificationLink}</p>
+                <hr style="border: 0; border-top: 1px solid #e4e4e7; margin: 30px 0;" />
+                <p style="font-size: 12px; color: #71717a;">Este enlace expirará pronto por razones de seguridad.</p>
+                <p style="font-size: 10px; color: #a1a1aa;">UnderDeskFlow SaaS - Infraestructura Invisible</p>
+            </div>
+        `;
+
+        await resend.emails.send({
+            from: "UnderDeskFlow <no-reply@udf.cl>",
+            to: [email],
+            subject: "Verifica tu cuenta en UnderDesk Flow",
+            html: emailHtml,
+        });
+
+        logger.info("Verification email dispatched via Resend", { requestId, to: email });
+    } catch (error) {
+        logger.error("Failed to send verification email", { requestId, email, error });
+        throw error;
+    }
+}
