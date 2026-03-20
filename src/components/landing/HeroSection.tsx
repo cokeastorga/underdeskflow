@@ -115,12 +115,13 @@ export default function HeroSection({ isFirstRun }: { isFirstRun?: boolean }) {
                             <ArrowRight className="h-5 w-5 ml-2" />
                         </Button>
                     </Link>
-                    <Link href="/login">
+                    <Link href="/demo">
                         <Button
                             size="lg"
-                            className="h-16 px-10 text-lg rounded-2xl bg-white text-black hover:bg-gray-200 transition-all duration-300 shadow-lg hover:shadow-xl"
+                            className="h-16 px-10 text-lg rounded-2xl bg-white text-black hover:bg-gray-200 transition-all duration-300 shadow-lg hover:shadow-xl group"
                         >
-                            Ver demo en vivo →
+                            Ver demo en vivo
+                            <ArrowRight className="h-5 w-5 ml-2 transition-transform group-hover:translate-x-1" />
                         </Button>
                     </Link>
                 </motion.div>
