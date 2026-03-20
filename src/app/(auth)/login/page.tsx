@@ -7,7 +7,7 @@ import { auth, googleProvider, db } from "@/lib/firebase/config";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Lock, Mail, Chrome, LayoutTemplate, ArrowRight } from "lucide-react";
+import { Lock, Mail, Chrome, LayoutTemplate, ArrowRight, ArrowLeft } from "lucide-react";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -139,6 +139,14 @@ export default function AdminLoginPage() {
 
             {/* Right Section - Login Form */}
             <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative">
+                <div className="absolute top-8 left-8 lg:left-12">
+                    <Link href="/">
+                        <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">
+                            <ArrowLeft className="h-4 w-4" />
+                            Volver
+                        </Button>
+                    </Link>
+                </div>
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}

@@ -6,7 +6,7 @@ import { auth, googleProvider, db } from "@/lib/firebase/config";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Lock, Mail, Chrome, User, Phone, Building2, LayoutTemplate, Check } from "lucide-react";
+import { Lock, Mail, Chrome, User, Phone, Building2, LayoutTemplate, Check, ArrowLeft } from "lucide-react";
 import { doc, setDoc, collection, query, limit, getDocs } from "firebase/firestore";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -204,6 +204,14 @@ export default function RegisterPage() {
 
             {/* Right Section - Registration Form */}
             <div className="w-full lg:w-7/12 flex items-center justify-center p-6 lg:p-12 relative overflow-y-auto">
+                <div className="absolute top-8 left-8 lg:left-12">
+                    <Link href="/">
+                        <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">
+                            <ArrowLeft className="h-4 w-4" />
+                            Volver
+                        </Button>
+                    </Link>
+                </div>
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
