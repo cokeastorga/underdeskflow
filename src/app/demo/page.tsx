@@ -126,7 +126,11 @@ const ModuleHeader = ({ title, subtitle, action }: { title: string; subtitle: st
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
             <h2 className="text-3xl font-bold tracking-tight text-white mb-1 uppercase tracking-tighter">{title}</h2>
-            <p className="text-zinc-500 text-sm font-medium">{subtitle}</p>
+            <div className="flex items-center gap-2">
+                <p className="text-zinc-500 text-sm font-medium">{subtitle}</p>
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">Actualizado recién</span>
+            </div>
         </div>
         {action}
     </div>
@@ -175,8 +179,9 @@ const DashboardMock = () => (
             ))}
         </section>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <DashboardCard className="lg:col-span-2 h-64 flex items-center justify-center border-dashed">
-                <BarChart3 className="h-12 w-12 text-white/10" />
+            <DashboardCard className="lg:col-span-2 h-64 flex items-center justify-center border-dashed relative overflow-hidden group">
+                <div className="absolute inset-0 bg-violet-600/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <BarChart3 className="h-12 w-12 text-white/10 group-hover:text-violet-500/20 transition-colors" />
                 <span className="ml-4 text-zinc-600 font-black uppercase tracking-[0.5em] text-xs">Simulación de Tráfico Edge</span>
             </DashboardCard>
             <DashboardCard className="space-y-6">
@@ -202,8 +207,11 @@ const ProductsMock = () => (
                 { name: "Polera Oversize", price: "$19.990", stock: 42, status: "Activo" },
                 { name: "Zapatillas Urban", price: "$59.990", stock: 12, status: "Bajo Stock" },
                 { name: "Mochila Tech", price: "$34.990", stock: 0, status: "Agotado" },
+                { name: "Reloj Minimal", price: "$89.990", stock: 8, status: "Bajo Stock" },
+                { name: "Sudadera Gray", price: "$24.990", stock: 154, status: "Activo" },
+                { name: "Gorra Tech", price: "$14.990", stock: 2, status: "Bajo Stock" },
             ].map((p, i) => (
-                <DashboardCard key={i} className="p-0 overflow-hidden bg-zinc-900/40" delay={i * 0.1}>
+                <DashboardCard key={i} className="p-0 overflow-hidden bg-zinc-900/40" delay={i * 0.05}>
                     <div className="h-32 bg-zinc-800 flex items-center justify-center"><Package className="h-8 w-8 text-white/5" /></div>
                     <div className="p-5 space-y-3">
                         <div className="flex justify-between items-center">
@@ -239,18 +247,102 @@ const OrdersMock = () => (
                         { id: "#1024", customer: "Juan Pérez", status: "Pagado", amount: "$34.990" },
                         { id: "#1025", customer: "María Soto", status: "Enviado", amount: "$89.990" },
                         { id: "#1026", customer: "Diego Ramos", status: "Pendiente", amount: "$12.490" },
+                        { id: "#1027", customer: "Ana Lucía", status: "Pagado", amount: "$54.000" },
+                        { id: "#1028", customer: "Carlos Silva", status: "Reembolsado", amount: "$19.990" },
                     ].map((o, i) => (
                         <tr key={i} className="border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer">
                             <td className="px-6 py-4 text-xs font-black text-white">{o.id}</td>
                             <td className="px-6 py-4 text-sm text-zinc-400">{o.customer}</td>
                             <td className="px-6 py-4">
-                                <span className="px-2 py-1 rounded-lg text-[10px] font-black uppercase bg-emerald-500/10 text-emerald-400">{o.status}</span>
+                                <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase ${o.status === "Pagado" ? "bg-emerald-500/10 text-emerald-400" : o.status === "Pendiente" ? "bg-amber-500/10 text-amber-400" : "bg-zinc-800 text-zinc-500"}`}>{o.status}</span>
                             </td>
                             <td className="px-6 py-4 text-sm font-black text-white text-right">{o.amount}</td>
                         </tr>
                     ))}
                 </tbody>
             </table>
+        </DashboardCard>
+    </div>
+);
+
+const CustomersMock = () => (
+    <div className="space-y-8">
+        <ModuleHeader title="Comunidad de Clientes" subtitle="Fidelización y análisis de comportamiento." />
+        <div className="grid grid-cols-1 gap-4">
+            {[
+                { name: "Juan Pérez", email: "juan@example.com", total: "$420k", orders: 12, city: "Santiago" },
+                { name: "María Soto", email: "maria.s@gmail.com", total: "$89k", orders: 3, city: "Concepción" },
+                { name: "Diego Ramos", email: "dramos@outlook.com", total: "$12k", orders: 1, city: "Valparaíso" },
+            ].map((c, i) => (
+                <DashboardCard key={i} className="flex items-center justify-between p-5 bg-zinc-900/40" delay={i * 0.1}>
+                    <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 rounded-full bg-indigo-600/20 flex items-center justify-center text-indigo-400 font-bold">{c.name.charAt(0)}</div>
+                        <div>
+                            <h4 className="font-bold text-white text-sm">{c.name}</h4>
+                            <p className="text-[10px] text-zinc-500">{c.email}</p>
+                        </div>
+                    </div>
+                    <div className="flex gap-10 items-center">
+                        <div className="text-right">
+                            <p className="text-[9px] font-black uppercase text-zinc-600">Total Venta</p>
+                            <p className="text-xs font-bold text-white">{c.total}</p>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-[9px] font-black uppercase text-zinc-600">Sede</p>
+                            <p className="text-xs font-bold text-zinc-400">{c.city}</p>
+                        </div>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-zinc-700 hover:text-white"><Eye className="h-4 w-4" /></Button>
+                    </div>
+                </DashboardCard>
+            ))}
+        </div>
+    </div>
+);
+
+const PaymentsMock = () => (
+    <div className="space-y-8">
+        <ModuleHeader title="Pasarela Transaccional" subtitle="Logs de pagos y estados de salud bancaria." />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <DashboardCard className="bg-emerald-500/5 border-emerald-500/20">
+                <p className="text-[10px] font-black uppercase text-emerald-500 tracking-widest mb-2">Salud de Red (Webpay)</p>
+                <div className="flex justify-between items-end">
+                    <h3 className="text-3xl font-black text-white uppercase italic tracking-tighter">99.9%</h3>
+                    <span className="text-[10px] font-bold text-emerald-400">OPERACIONAL</span>
+                </div>
+            </DashboardCard>
+            <DashboardCard className="bg-blue-500/5 border-blue-500/20">
+                <p className="text-[10px] font-black uppercase text-blue-500 tracking-widest mb-2">Ticket Promedio</p>
+                <div className="flex justify-between items-end">
+                    <h3 className="text-3xl font-black text-white uppercase italic tracking-tighter">$24.890</h3>
+                    <span className="text-[10px] font-bold text-blue-400">+4.2% HOY</span>
+                </div>
+            </DashboardCard>
+        </div>
+        <DashboardCard className="p-0 overflow-hidden bg-zinc-900/40">
+            <div className="px-6 py-4 border-b border-white/5 flex justify-between items-center">
+                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Últimas Transacciones</h4>
+            </div>
+            <div className="divide-y divide-white/5">
+                {[
+                    { method: "Webpay Plus", status: "Aprobado", amount: "$34.990", time: "Hace 2m" },
+                    { method: "Mercado Pago", status: "Aprobado", amount: "$12.000", time: "Hace 15m" },
+                    { method: "PayPal Latam", status: "Rechazado", amount: "$5.000", time: "Hace 21m", error: "Fondos Insuficientes" },
+                ].map((p, i) => (
+                    <div key={i} className="flex justify-between items-center p-4 hover:bg-white/5 transition-colors">
+                        <div className="flex items-center gap-3">
+                            <div className={`h-2 w-2 rounded-full ${p.status === "Aprobado" ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" : "bg-rose-500"}`} />
+                            <div>
+                                <p className="text-xs font-bold text-white uppercase">{p.method}</p>
+                                <p className="text-[9px] text-zinc-600 font-black uppercase">{p.time} • {p.status}</p>
+                            </div>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-sm font-black text-white">{p.amount}</p>
+                            {p.error && <p className="text-[8px] text-rose-500 font-black uppercase">{p.error}</p>}
+                        </div>
+                    </div>
+                ))}
+            </div>
         </DashboardCard>
     </div>
 );
@@ -479,13 +571,133 @@ const SettingsMock = () => (
     </div>
 );
 
+const AnalyticsMock = () => (
+    <div className="space-y-10">
+        <ModuleHeader title="Inteligencia de Datos" subtitle="Analítica predictiva de tu ecosistema comercial." />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <DashboardCard className="space-y-8 min-h-[300px] flex flex-col justify-center border-violet-500/10">
+                <div className="flex justify-between items-start">
+                    <div className="space-y-1">
+                        <p className="text-[10px] font-black uppercase text-zinc-600 tracking-widest">Revenue Proyectado (30D)</p>
+                        <h4 className="text-4xl font-black text-white">$242.000.000</h4>
+                    </div>
+                    <div className="h-10 px-3 bg-emerald-500/10 text-emerald-400 rounded-xl flex items-center gap-1 text-xs font-black uppercase tracking-widest"><TrendingUp className="h-3 w-3" /> +15.5%</div>
+                </div>
+                <div className="h-32 w-full flex items-end gap-1 px-2 opacity-30">
+                    {Array.from({length: 30}).map((_, i) => (
+                        <div key={i} className="flex-1 bg-violet-500 rounded-t" style={{ height: `${20 + Math.random() * 80}%` }} />
+                    ))}
+                </div>
+            </DashboardCard>
+            <div className="grid grid-cols-2 gap-4">
+                {[
+                    { label: "Abandono de Carrito", value: "24%", trend: "-5%", up: true, color: "text-amber-400" },
+                    { label: "Ticket Promedio", value: "$34k", trend: "+2%", up: true, color: "text-emerald-400" },
+                    { label: "Nuevos Clientes", value: "842", trend: "+12%", up: true, color: "text-blue-400" },
+                    { label: "Satisfacción (CSAT)", value: "4.9/5", trend: "+0.1", up: true, color: "text-indigo-400" },
+                ].map((m, i) => (
+                    <DashboardCard key={i} className="flex flex-col justify-center text-center">
+                        <p className="text-[9px] font-black uppercase text-zinc-600 tracking-widest mb-1">{m.label}</p>
+                        <h4 className={`text-2xl font-black tracking-tighter ${m.color}`}>{m.value}</h4>
+                        <span className="text-[8px] font-bold text-zinc-700 mt-2 uppercase tracking-widest">{m.trend} ESTE MES</span>
+                    </DashboardCard>
+                ))}
+            </div>
+        </div>
+    </div>
+);
+
+const DomainsMock = () => (
+    <div className="space-y-8">
+        <ModuleHeader title="Soberanía de Marca" subtitle="Configura y escala tus dominios personalizados." />
+        <div className="space-y-4">
+            {[
+                { domain: "boutique-luxury.cl", type: "CNAME Personalizado", ssl: "Activo", status: "Propagado" },
+                { domain: "admin.boutique.cl", type: "Dashboard Interno", ssl: "Activo", status: "Propagado" },
+                { domain: "instance-842.udf.cl", type: "Wildcard Native", ssl: "Activo", status: "Activo" },
+            ].map((d, i) => (
+                <DashboardCard key={i} className="flex items-center justify-between p-6 bg-zinc-900/40 border-white/5" delay={i * 0.1}>
+                    <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 flex items-center justify-center bg-white/5 rounded-xl text-zinc-500"><Globe className="h-5 w-5" /></div>
+                        <div>
+                            <p className="text-sm font-bold text-white tracking-tight">{d.domain}</p>
+                            <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">{d.type}</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-10">
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse" />
+                            <span className="text-[9px] text-emerald-500 font-black uppercase tracking-widest">SSL Seguro</span>
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{d.status}</span>
+                    </div>
+                </DashboardCard>
+            ))}
+        </div>
+    </div>
+);
+
+const IntegrationsMock = ({ step, onNext, onSkip }: { step?: number; onNext?: () => void; onSkip?: () => void }) => {
+    return (
+        <div className="space-y-8 relative">
+            <OnboardingTooltip text="Conecta tus canales de venta para unificar tus operaciones." step={0} currentStep={step || -1} onNext={onNext || (() => {})} onSkip={onSkip || (() => {})} />
+            <ModuleHeader title="Unifica tus Canales" subtitle="Vende en todas partes, gestiona en un solo lugar." />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {[{ id: "shopify", name: "Shopify Store", icon: "https://cdn.worldvectorlogo.com/logos/shopify.svg" }, { id: "mercadolibre", name: "ML Marketplace", icon: "https://cdn.worldvectorlogo.com/logos/mercadolibre-1.svg" }].map((app, i) => (
+                    <DashboardCard key={app.id} className="bg-zinc-900/40">
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="h-12 w-12 p-3 bg-white/10 rounded-2xl flex items-center justify-center"><img src={app.icon} className="h-full w-full object-contain" /></div>
+                            <div>
+                                <h4 className="font-bold text-white uppercase tracking-tight">{app.name}</h4>
+                                <span className="text-[9px] font-black text-emerald-500 uppercase">Sincronización Activa</span>
+                            </div>
+                        </div>
+                        <Button className="w-full bg-white text-black font-black uppercase rounded-2xl h-14" onClick={() => onNext && onNext()}>Sincronizar Canal</Button>
+                    </DashboardCard>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+const StoreCreationMock = ({ step, onNext, onSkip }: { step?: number; onNext?: () => void; onSkip?: () => void }) => {
+    const [loading, setLoading] = useState(false);
+    const [done, setDone] = useState(false);
+    const handleSubmit = (e: any) => { e.preventDefault(); setLoading(true); setTimeout(() => { setLoading(false); setDone(true); }, 2000); };
+    return (
+        <div className="max-w-xl mx-auto py-10 relative">
+            <OnboardingTooltip text="Configura tu instancia. Tendrás un dominio listo para vender en segundos." step={1} currentStep={step || -1} onNext={onNext || (() => {})} onSkip={onSkip || (() => {})} />
+            {!done ? (
+                <DashboardCard className="p-8 space-y-8 bg-zinc-900 border-violet-500/20 shadow-2xl">
+                    <div className="text-center space-y-2">
+                        <h3 className="text-3xl font-black text-white uppercase italic tracking-tighter">Lanza tu Tienda</h3>
+                        <p className="text-zinc-500 text-xs font-medium uppercase tracking-widest">Infraestructura comercial a un clic</p>
+                    </div>
+                    <form className="space-y-4" onSubmit={handleSubmit}>
+                        <div className="space-y-1.5"><label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest pl-1">Nombre Comercial</label><input placeholder="Ej: Boutique Luxury Santiago" className="w-full h-14 bg-zinc-950 border border-white/5 rounded-2xl px-5 text-white text-sm focus:border-violet-500 outline-none transition-all" /></div>
+                        <Button type="submit" className="w-full h-16 bg-violet-600 hover:bg-violet-500 font-black uppercase text-xl rounded-2xl shadow-2xl shadow-violet-600/30 transition-all active:scale-95">{loading ? <Loader2 className="h-6 w-6 animate-spin" /> : "Desplegar Operación"}</Button>
+                    </form>
+                </DashboardCard>
+            ) : (
+                <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center space-y-8 py-10">
+                    <div className="h-24 w-24 bg-emerald-500/20 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto animate-bounce"><CheckCircle2 className="h-12 w-12 text-emerald-400" /></div>
+                    <div className="space-y-2">
+                        <h3 className="text-4xl font-black text-white uppercase italic tracking-tighter">¡Operación Activa!</h3>
+                        <p className="text-zinc-500 font-medium tracking-wide">Tu instancia ha sido desplegada en el Edge satisfactoriamente.</p>
+                    </div>
+                    <Button onClick={() => setDone(false)} variant="link" className="text-zinc-700 font-black uppercase tracking-widest text-[10px] hover:text-white">Crear otra instancia demo</Button>
+                </motion.div>
+            )}
+        </div>
+    );
+};
+
 // --- Main Page Component ---
 
 export default function DemoPage() {
     const [activeModule, setActiveModule] = useState<ModuleId>("dashboard");
     const [demoStep, setDemoStep] = useState(0);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [notifications, setNotifications] = useState<string[]>([]);
     
     // Module rendering routing
     const renderModule = () => {
@@ -493,16 +705,20 @@ export default function DemoPage() {
             case "dashboard": return <DashboardMock />;
             case "orders": return <OrdersMock />;
             case "products": return <ProductsMock />;
+            case "customers": return <CustomersMock />;
+            case "payments": return <PaymentsMock />;
             case "fulfillment": return <FulfillmentMock />;
             case "payouts": return <PayoutsMock />;
+            case "analytics": return <AnalyticsMock />;
             case "marketing": return <MarketingMock />;
             case "pos": return <POSMock />;
             case "team": return <TeamMock />;
             case "billing": return <BillingMock />;
             case "settings": return <SettingsMock />;
+            case "domains": return <DomainsMock />;
             case "integrations": return <IntegrationsMock step={demoStep} onNext={() => setDemoStep(1)} onSkip={() => setDemoStep(-1)} />;
             case "create-store": return <StoreCreationMock step={demoStep} onNext={() => setDemoStep(-1)} onSkip={() => setDemoStep(-1)} />;
-            default: return <div className="py-20 text-center text-zinc-700 font-black uppercase tracking-widest text-lg animate-pulse">Syncing Data Core...</div>;
+            default: return <DashboardMock />; // Fallback to avoid placeholders
         }
     };
 
@@ -537,7 +753,7 @@ export default function DemoPage() {
                 
                 <div className="p-8 border-t border-white/5 text-center">
                     <p className="text-[9px] font-black uppercase text-zinc-800 tracking-widest mb-4">Enterprise v1.4.2</p>
-                    <Link href="/register"><Button className="w-full h-11 bg-white text-black font-black uppercase tracking-tighter text-[10px] rounded-2xl hover:bg-zinc-200">Terminar Simulación</Button></Link>
+                    <Link href="/register"><Button className="w-full h-11 bg-white text-black font-black uppercase tracking-tighter text-[10px] rounded-2xl hover:bg-zinc-200 transition-all active:scale-95">Terminar Simulación</Button></Link>
                 </div>
             </aside>
 
@@ -555,7 +771,7 @@ export default function DemoPage() {
                     </div>
                     <div className="flex items-center gap-4">
                         <span className="text-[10px] font-black text-zinc-600 lg:mr-4 uppercase tracking-[0.3em] hidden xl:block">UnderDeskFlow OS Simulation</span>
-                        <Link href="/register"><Button className="h-12 px-8 rounded-2xl bg-violet-600 hover:bg-violet-500 text-white font-black uppercase tracking-tight shadow-xl">Adquirir Licencia Real</Button></Link>
+                        <Link href="/register"><Button className="h-12 px-8 rounded-2xl bg-violet-600 hover:bg-violet-500 text-white font-black uppercase tracking-tight shadow-xl shadow-violet-600/20 active:scale-95 transition-all">Adquirir Licencia Real</Button></Link>
                     </div>
                     <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden text-white"><LayoutTemplate className="h-6 w-6" /></button>
                 </header>
@@ -572,7 +788,7 @@ export default function DemoPage() {
                     <div className="flex gap-10">
                         {[
                             { label: "Storage", val: "1.2TB / 5TB", icon: Shield },
-                            { label: "Throughput", val: "84k req/sec", icon: zap },
+                            { label: "Throughput", val: "84k req/sec", icon: Zap },
                             { label: "Status", val: "Operational", icon: Activity },
                         ].map((s, i) => (
                             <div key={i} className="flex gap-2 items-center">
@@ -589,52 +805,3 @@ export default function DemoPage() {
         </div>
     );
 }
-
-// Re-implementing these for closure consistency
-const zap = Zap;
-const IntegrationsMock = ({ step, onNext, onSkip }: { step?: number; onNext?: () => void; onSkip?: () => void }) => {
-    const [connected, setConnected] = useState<string[]>(["shopify"]);
-    return (
-        <div className="space-y-8 relative">
-            <OnboardingTooltip text="Conecta tus canales de venta para unificar tus operaciones." step={0} currentStep={step || -1} onNext={onNext || (() => {})} onSkip={onSkip || (() => {})} />
-            <ModuleHeader title="Unifica tus Canales" subtitle="Vende en todas partes, gestiona en un solo lugar." />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {[{ id: "shopify", name: "Shopify", icon: "https://cdn.worldvectorlogo.com/logos/shopify.svg" }, { id: "mercadolibre", name: "MercadoLibre", icon: "https://cdn.worldvectorlogo.com/logos/mercadolibre-1.svg" }].map((app, i) => (
-                    <DashboardCard key={app.id} className="bg-zinc-900/40">
-                        <div className="flex items-center gap-4 mb-6">
-                            <div className="h-10 w-10 p-2 bg-white/10 rounded-xl"><img src={app.icon} className="h-full w-full object-contain" /></div>
-                            <h4 className="font-bold text-white uppercase tracking-tight">{app.name}</h4>
-                        </div>
-                        <Button className="w-full bg-white text-black font-black uppercase rounded-xl h-12" onClick={() => onNext && onNext()}>Conectar Canal</Button>
-                    </DashboardCard>
-                ))}
-            </div>
-        </div>
-    );
-};
-
-const StoreCreationMock = ({ step, onNext, onSkip }: { step?: number; onNext?: () => void; onSkip?: () => void }) => {
-    const [loading, setLoading] = useState(false);
-    const [done, setDone] = useState(false);
-    const handleSubmit = (e: any) => { e.preventDefault(); setLoading(true); setTimeout(() => { setLoading(false); setDone(true); }, 2000); };
-    return (
-        <div className="max-w-xl mx-auto py-10 relative">
-            <OnboardingTooltip text="Configura tu instancia. Tendrás un dominio listo para vender en segundos." step={1} currentStep={step || -1} onNext={onNext || (() => {})} onSkip={onSkip || (() => {})} />
-            {!done ? (
-                <DashboardCard className="p-8 space-y-6">
-                    <h3 className="text-2xl font-black text-white uppercase italic tracking-tighter">Lanza tu Tienda</h3>
-                    <form className="space-y-4" onSubmit={handleSubmit}>
-                        <input placeholder="Nombre de Marca" className="w-full h-12 bg-zinc-950 border border-white/5 rounded-xl px-4 text-white text-sm" />
-                        <Button type="submit" className="w-full h-14 bg-violet-600 font-black uppercase text-lg rounded-2xl">{loading ? "Lanzando..." : "Sincronizar OS"}</Button>
-                    </form>
-                </DashboardCard>
-            ) : (
-                <div className="text-center space-y-6">
-                    <CheckCircle2 className="h-20 w-20 text-emerald-400 mx-auto" />
-                    <h3 className="text-3xl font-black text-white uppercase italic tracking-tighter">¡Tienda Online!</h3>
-                    <Button onClick={() => setDone(false)} variant="link" className="text-zinc-600 font-black uppercase tracking-widest text-[10px]">Reiniciar Demo</Button>
-                </div>
-            )}
-        </div>
-    );
-};
