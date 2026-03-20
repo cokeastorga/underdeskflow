@@ -30,31 +30,31 @@ export default function PricingSection() {
 
                 <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-8 relative z-10">
                     {[
-                        { 
-                            name: "Basic", 
-                            price: "$9.990", 
+                        {
+                            name: "Basic",
+                            price: "$29.990",
                             desc: "Ideal para validación inicial",
                             features: ["1 Tienda", "Bot de ventas", "Stripe Support", "99.0% SLA"],
-                            color: "zinc" 
+                            color: "zinc"
                         },
-                        { 
-                            name: "Pro", 
-                            price: "$29.990", 
+                        {
+                            name: "Pro",
+                            price: "$89.990",
                             desc: "Para negocios consolidados",
                             features: ["5 Tiendas", "CRM Avanzado", "Multi-Currency", "99.5% SLA", "Split Payments"],
                             color: "violet",
                             popular: true
                         },
-                        { 
-                            name: "Enterprise", 
-                            price: "Custom", 
+                        {
+                            name: "Enterprise",
+                            price: "$249.990",
                             desc: "Infraestructura dedicada",
                             features: ["Tiendas ∞", "White-labeling", "API Rate-limit +", "99.9% SLA", "Account Manager"],
-                            color: "zinc" 
+                            color: "zinc"
                         }
                     ].map((p, i) => (
-                        <motion.div 
-                            key={i} 
+                        <motion.div
+                            key={i}
                             {...fdUp(i * 0.15)}
                             className={`p-10 rounded-3xl border ${p.popular ? 'border-violet-500/40 bg-zinc-900/60 shadow-2xl shadow-violet-500/10 scale-105' : 'border-zinc-800 bg-zinc-900/30'} relative group hover:border-zinc-700 transition-colors`}
                         >
@@ -86,11 +86,11 @@ export default function PricingSection() {
             <div className="relative py-32 px-6 border-t border-zinc-900 bg-zinc-900/10">
                 <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-24 items-center relative z-10">
                     <motion.div {...fdUp(1)} className="order-last lg:order-first">
-                         <div className="p-10 rounded-3xl border border-zinc-800 bg-zinc-950 shadow-2xl relative overflow-hidden group">
-                             <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:opacity-10 transition-opacity">
-                                 <ShieldCheck className="h-48 w-48 text-violet-400" />
-                             </div>
-                             <div className="relative z-10">
+                        <div className="p-10 rounded-3xl border border-zinc-800 bg-zinc-950 shadow-2xl relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:opacity-10 transition-opacity">
+                                <ShieldCheck className="h-48 w-48 text-violet-400" />
+                            </div>
+                            <div className="relative z-10">
                                 <div className="flex items-center gap-3 mb-8">
                                     <Globe className="h-5 w-5 text-violet-400" />
                                     <p className="text-sm font-bold text-white tracking-tight">Global Infrastructure Status</p>
@@ -110,8 +110,8 @@ export default function PricingSection() {
                                         </div>
                                     ))}
                                 </div>
-                             </div>
-                         </div>
+                            </div>
+                        </div>
                     </motion.div>
 
                     <motion.div {...fdUp(0)}>
@@ -160,11 +160,11 @@ export default function PricingSection() {
 
                     <motion.div {...fdUp(1)} className="md:w-1/2 relative">
                         <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-8 shadow-2xl relative">
-                             <div className="flex items-center justify-between mb-8 pb-4 border-b border-zinc-800">
+                            <div className="flex items-center justify-between mb-8 pb-4 border-b border-zinc-800">
                                 <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Enterprise Feature Matrix</span>
                                 <div className="h-2 w-2 rounded-full bg-violet-400 animate-pulse" />
-                             </div>
-                             <div className="space-y-4">
+                            </div>
+                            <div className="space-y-4">
                                 {[
                                     "Infinite Store Instances",
                                     "Custom White-label Domains",
@@ -177,7 +177,7 @@ export default function PricingSection() {
                                         <Check className="h-3 w-3 text-violet-400" />
                                     </div>
                                 ))}
-                             </div>
+                            </div>
                         </div>
                     </motion.div>
                 </div>
